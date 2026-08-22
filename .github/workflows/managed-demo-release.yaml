@@ -128,7 +128,7 @@ jobs:
             printf '%s = "%s/%s@%s"\n' "$variable" "$registry" "$image" "$digest"
           done > managed-image-digests.tfvars
       - name: Retain immutable digest evidence for phase 2
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: managed-image-digests-${{ inputs.release_id }}
           path: managed-image-digests.tfvars
@@ -227,7 +227,7 @@ jobs:
           KB_PIPELINE_IAM_DB_USER=$(jq -er .pipeline <<<"$users")
           scripts/apply_managed_schema.sh
       - name: Retain non-secret migration evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: managed-schema-evidence-${{ inputs.release_id }}
           path: evidence/
@@ -306,7 +306,7 @@ jobs:
           gcloud run jobs execute "$REFRESH_JOB_NAME" --project "$PROJECT_ID"
           --region "$REGION" --wait
       - name: Retain artifact checksums and presenter handoff
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: managed-demo-artifacts-${{ inputs.release_id }}
           path: rendered-managed-demo/
