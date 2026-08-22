@@ -1,0 +1,9 @@
+{
+  "bindings": [
+    {
+      "tenant": "__DEMO_TENANT__",
+      "principal_id": "user:__DEMO_USER_EMAIL__",
+      "tags": ["dept:risk", "classification:internal"]
+    }
+  ]
+}

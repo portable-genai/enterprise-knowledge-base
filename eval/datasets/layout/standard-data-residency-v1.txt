@@ -1,0 +1,17 @@
+Data Residency Standard
+
+This standard governs where customer records may be stored and processed. It carries a
+restricted classification.
+
+Applicability
+
+The standard applies to all restricted customer data held by the bank.
+
+Storage location for restricted customer records
+
+Restricted customer records must be stored and processed only in the in-country region,
+and a copy must never be replicated to another jurisdiction without an approved waiver.
+
+Region              Permitted        Waiver required
+in-country          yes              no
+other jurisdiction  no               yes

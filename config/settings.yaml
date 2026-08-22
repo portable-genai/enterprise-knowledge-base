@@ -1,0 +1,229 @@
+# Enterprise Knowledge Base (A2) : runtime configuration.
+#
+# Three deployment profiles, selected by KB_PROFILE (or profile: below):
+#   gcp    : Google Cloud managed services (lazy SDK imports). Production sets
+#            KB_PROFILE=gcp explicitly (Dockerfile / runbook).
+#   local  : a WORKING offline laptop stack (SQLite FTS5 + deterministic LLM,
+#            SDK-free, no API key, no emulator required). Choose it deliberately
+#            (KB_PROFILE=local) for dev / test / CI.
+#   onprem : fail-fast Google Distributed Cloud migration placeholders.
+# Nothing in src/enterprise_kb/domain changes between profiles.
+#
+# The profile below interpolates ${KB_PROFILE} with NO ':-local' default on purpose. An
+# unset variable must reach config.resolve_profile as blank, so "nobody chose" stays
+# distinguishable from a chosen 'local' and cannot inherit the 'local' relaxations (dev CORS
+# origins, no HSTS, the zero-secret S2S opening). The SDK-free local adapters are still what
+# an unconsented run binds; it just does not get the loosened posture with them. Writing a
+# literal profile here (profile: gcp) IS a deliberate choice and is honoured as one.
+
+project_id: ${GOOGLE_CLOUD_PROJECT:-your-gcp-project}
+region: ${KB_REGION:-asia-southeast1} # Singapore reference deployment; runtime-parametric core
+profile: ${KB_PROFILE}             # gcp | local | platform | onprem
+kms_key: ${KB_KMS_KEY:-}           # regional Cloud KMS key for CMEK
+grounding_enabled: ${KB_GROUNDING_ENABLED:-false}
+
+models:
+  reasoning: gemini-3.5-flash          # GA : grounded-answer synthesis (thinking=high)
+  triage: gemini-3.5-flash             # same reviewed Singapore single-zone PT order
+  hard_reasoning: gemini-3.1-pro       # Preview : OFF unless use_hard_reasoning=true
+  use_hard_reasoning: false
+
+storage:
+  corpus_bucket: ${KB_CORPUS_BUCKET:-enterprise-knowledge-base-corpus}
+  control_bucket: ${KB_CONTROL_BUCKET:-}
+  raw_source_bucket: ${KB_RAW_SOURCE_BUCKET:-}
+
+alloydb:
+  instance_uri: ${KB_ALLOYDB_URI:-}
+  database: enterprise_kb
+  # Per-workload IAM DB user from Terraform output; no shared/password-authenticated DB user.
+  user: ${KB_ALLOYDB_USER:-}
+  ip_type: PRIVATE
+  table: document_freshness
+  vector_table: document_chunks
+  acl_table: principal_acl_tags
+
+model_armor:
+  template_id: ${KB_MODEL_ARMOR_TEMPLATE:-}
+
+logging:
+  log_name: enterprise-knowledge-base-audit
+  bucket: enterprise-knowledge-base-worm
+  retention_days: 2557               # ~7 years; bucket is locked (irreversible) in prod
+
+agent_engine:
+  resource_name: ${KB_AGENT_ENGINE:-}
+  display_name: enterprise-knowledge-base
+
+corpus:
+  ttl_days: 7                        # freshness window for re-index
+  registry_path: ${KB_CORPUS_REGISTRY:-src/enterprise_kb/pipelines/sources/registry.yaml}
+
+acl_sync:
+  bindings_uri: ${KB_ACL_BINDINGS_URI:-}
+
+iap:
+  service_tenants: ${KB_IAP_SERVICE_TENANTS:-{}}
+
+# Deploy-time residency allowlist (P-03 / D5). Mirrors the Terraform `allowed_regions`
+# variable that generates the gcp.resourceLocations Org Policy. `region:` above must be a
+# member: Settings.load() raises ResidencyError otherwise, so a mis-set region fails at
+# app load, not after the first cross-border write. A second country is a config entry
+# here plus a tfvars line, never a repo fork.
+residency:
+  allowed_regions: [asia-southeast1]
+
+# Jurisdiction PII packs (C4 / E2). The selected jurisdictions drive BOTH the runtime
+# redactor (local regex adapter and the GCP DLP custom info types) and the eval
+# pii_safety metric, from the one shared `pii-kit` source, so a fork that switches
+# market cannot inherit a falsely green safety gate. Values are ISO-3166 alpha-2.
+pii:
+  jurisdictions: ${KB_PII_JURISDICTIONS:-SG}
+
+# --------------------------------------------------------------------------- #
+# Bank-owned policy numbers (B4). Every value here is a tunable a compliance owner may
+# change without touching code; the defaults in domain/policy.py ARE these values, so an
+# absent section reproduces reference behavior exactly.
+# --------------------------------------------------------------------------- #
+policy:
+  review:
+    # Answers below this self-critique confidence escalate to ENHANCED review (SPEC 5).
+    answer_confidence_floor: 0.6
+    # Maker-checker floor (P-06): every synthesised answer is reviewed. Setting this
+    # false downgrades to risk-based gating and is a deliberate, recorded deviation.
+    review_all_answers: true
+    # ACL labels (case-insensitive substrings) that escalate an answer they ground.
+    sensitive_tags:
+      - classification:restricted
+      - classification:confidential
+      - pii
+      - mnpi
+      - legal-privileged
+  # corpus.ttl_days and the pinned `region:` above are the homes of those two numbers;
+  # the policy bundle borrows them. Add a `corpus:` block here only to override them for
+  # the freshness engine specifically.
+  answer:
+    # B2: an answer with no ACL-admitted passage is a hard error, never an ungrounded
+    # caveated reply. Set false to get the degraded envelope instead (caller then owns
+    # the ungrounded case).
+    empty_retrieval_raises: true
+  citation:
+    # Share of a claim's content vocabulary a layout block must contain before the claim
+    # is anchored to that block. Below it the citation keeps page-level provenance rather
+    # than pointing a reviewer at a block that does not support the claim.
+    anchor_match_floor: 0.34
+
+# SDK-free 'local' profile stores. Unset => per-package defaults under
+# ~/.enterprise_kb/ ; tests pass ':memory:' for ephemeral, deterministic stores.
+local:
+  db_path: ${KB_LOCAL_DB:-}          # SQLite FTS5 retrieval index
+  audit_path: ${KB_LOCAL_AUDIT:-}    # append-only local audit store
+  ledger_path: ${KB_LOCAL_LEDGER:-}  # freshness + residency ledger
+
+# ----------------------------------------------------------------------------- #
+# Port -> adapter bindings. The container requires the active profile explicitly, except
+# that the documented hybrid 'platform' profile uses gcp for ports with no sibling delegate.
+# Unknown profile selectors fail closed. These dotted paths are the build contract:
+# each adapter class takes a single Settings argument.
+# ----------------------------------------------------------------------------- #
+adapters:
+  # End-user identity (authentication). local = seeded dev personas, NO IdP/AD/LDAP, so
+  # demos and tests run offline; gcp/platform = verify the IAP-injected signed assertion
+  # (auth configured ON the GCP service); onprem = client IdP placeholder. The resolved
+  # Principal supplies the audit actor + entitlement principals, replacing any client-
+  # asserted actor/ACL and scoping the ACL-aware retrieval (P-09).
+  identity:
+    gcp: enterprise_kb.adapters.gcp.iap_identity:IapIdentityAdapter
+    platform: enterprise_kb.adapters.gcp.iap_identity:IapIdentityAdapter
+    local: enterprise_kb.adapters.local.identity:LocalPersonaIdentityAdapter
+    onprem: enterprise_kb.adapters.onprem.identity:OnPremIdentityAdapter
+  retrieval:
+    gcp: enterprise_kb.adapters.gcp.alloydb_retrieval:AlloyDBRetrievalAdapter
+    platform: enterprise_kb.adapters.gcp.alloydb_retrieval:AlloyDBRetrievalAdapter
+    local: enterprise_kb.adapters.local.retrieval:LocalFtsRetrievalAdapter
+    onprem: enterprise_kb.adapters.onprem.retrieval:OnPremRetrievalAdapter
+  access_control:
+    gcp: enterprise_kb.adapters.gcp.iam_access_control:IamAccessControlAdapter
+    platform: enterprise_kb.adapters.gcp.iam_access_control:IamAccessControlAdapter
+    local: enterprise_kb.adapters.local.access_control:LocalAccessControlAdapter
+    onprem: enterprise_kb.adapters.onprem.access_control:OnPremAccessControlAdapter
+  ingestion:
+    gcp: enterprise_kb.adapters.gcp.gcs_ingestion:GcsPortableIngestionAdapter
+    platform: enterprise_kb.adapters.gcp.gcs_ingestion:GcsPortableIngestionAdapter
+    local: enterprise_kb.adapters.local.ingestion:LocalIngestionAdapter
+    onprem: enterprise_kb.adapters.onprem.ingestion:OnPremIngestionAdapter
+  # Anchored document chunks behind claim-to-anchor resolution. Backed by the EXISTING
+  # chunk storage: AlloyDB's vector_table on gcp, the same SQLite file as the FTS index
+  # on local, and the fail-fast placeholder on onprem (the reversibility proof).
+  citation_store:
+    gcp: enterprise_kb.adapters.gcp.alloydb_citation_store:AlloyDBCitationStoreAdapter
+    platform: enterprise_kb.adapters.gcp.alloydb_citation_store:AlloyDBCitationStoreAdapter
+    local: enterprise_kb.adapters.local.citation_store:LocalSqliteCitationStore
+    onprem: enterprise_kb.adapters.onprem.citation_store:OnPremCitationStoreAdapter
+  ledger:
+    gcp: enterprise_kb.adapters.gcp.alloydb_ledger:AlloyDBLedgerAdapter
+    platform: enterprise_kb.adapters.gcp.alloydb_ledger:AlloyDBLedgerAdapter
+    local: enterprise_kb.adapters.local.ledger:LocalLedgerAdapter
+    onprem: enterprise_kb.adapters.onprem.ledger:OnPremLedgerAdapter
+  llm:
+    gcp: enterprise_kb.adapters.gcp.gemini_llm:GeminiLLMAdapter
+    platform: enterprise_kb.adapters.gcp.gemini_llm:GeminiLLMAdapter
+    local: enterprise_kb.adapters.local.llm:LocalDeterministicLLMAdapter
+    onprem: enterprise_kb.adapters.onprem.llm:OnPremLLMAdapter
+  grounding:
+    gcp: enterprise_kb.adapters.gcp.gemini_grounding:GeminiGoogleSearchGroundingAdapter
+    platform: enterprise_kb.adapters.gcp.gemini_grounding:GeminiGoogleSearchGroundingAdapter
+    local: enterprise_kb.adapters.local.grounding:LocalDisabledGroundingAdapter
+    onprem: enterprise_kb.adapters.onprem.grounding:OnPremGroundingAdapter
+  guardrail:
+    gcp: enterprise_kb.adapters.gcp.model_armor_guardrail:ModelArmorGuardrailAdapter
+    local: enterprise_kb.adapters.local.guardrail:LocalHeuristicGuardrailAdapter
+    platform: enterprise_kb.adapters.platform.remote_guardrail:RemoteGuardrailAdapter
+    onprem: enterprise_kb.adapters.onprem.guardrail:OnPremGuardrailAdapter
+  redaction:
+    gcp: enterprise_kb.adapters.gcp.dlp_redaction:DlpRedactionAdapter
+    local: enterprise_kb.adapters.local.redaction:LocalRegexRedactionAdapter
+    platform: enterprise_kb.adapters.platform.remote_redaction:RemoteRedactionAdapter
+    onprem: enterprise_kb.adapters.onprem.redaction:OnPremRedactionAdapter
+  agent_runtime:
+    gcp: enterprise_kb.adapters.gcp.agent_runtime:AgentRuntimeAdapter
+    platform: enterprise_kb.adapters.gcp.agent_runtime:AgentRuntimeAdapter
+    local: enterprise_kb.adapters.local.runtime:LocalAgentRuntimeAdapter
+    onprem: enterprise_kb.adapters.onprem.runtime:OnPremAgentRuntimeAdapter
+  session:
+    gcp: enterprise_kb.adapters.gcp.vertex_sessions:VertexSessionsAdapter
+    platform: enterprise_kb.adapters.gcp.vertex_sessions:VertexSessionsAdapter
+    local: enterprise_kb.adapters.local.session:LocalSessionAdapter
+    onprem: enterprise_kb.adapters.onprem.session:OnPremSessionAdapter
+  memory:
+    gcp: enterprise_kb.adapters.gcp.vertex_memory_bank:VertexMemoryBankAdapter
+    platform: enterprise_kb.adapters.gcp.vertex_memory_bank:VertexMemoryBankAdapter
+    local: enterprise_kb.adapters.local.memory:LocalMemoryAdapter
+    onprem: enterprise_kb.adapters.onprem.memory:OnPremMemoryAdapter
+  audit:
+    gcp: enterprise_kb.adapters.gcp.cloud_logging_audit:CloudLoggingAuditAdapter
+    local: enterprise_kb.adapters.local.audit:LocalAppendOnlyAuditAdapter
+    platform: enterprise_kb.adapters.platform.remote_audit:RemoteAuditAdapter
+    onprem: enterprise_kb.adapters.onprem.audit:OnPremAuditAdapter
+  tracer:
+    gcp: enterprise_kb.adapters.gcp.cloud_trace_tracer:CloudTraceTracerAdapter
+    platform: enterprise_kb.adapters.gcp.cloud_trace_tracer:CloudTraceTracerAdapter
+    local: enterprise_kb.adapters.local.tracer:LocalNoopTracerAdapter
+    onprem: enterprise_kb.adapters.onprem.tracer:OnPremTracerAdapter
+  evaluation:
+    # Consequential ACL/recall metrics remain the deterministic portable gate. The Gen AI
+    # Evaluation service cannot compute them and is not a serving dependency.
+    gcp: enterprise_kb.adapters.local.evaluation:LocalOfflineEvalAdapter
+    platform: enterprise_kb.adapters.local.evaluation:LocalOfflineEvalAdapter
+    local: enterprise_kb.adapters.local.evaluation:LocalOfflineEvalAdapter
+    onprem: enterprise_kb.adapters.onprem.evaluation:OnPremEvalAdapter
+  registry:
+    gcp: enterprise_kb.adapters.gcp.a2a_registry:A2ARegistryAdapter
+    local: enterprise_kb.adapters.local.registry:LocalRegistryAdapter
+    platform: enterprise_kb.adapters.platform.remote_registry:RemoteRegistryAdapter
+    onprem: enterprise_kb.adapters.onprem.registry:OnPremRegistryAdapter
+  tool_catalog:
+    gcp: enterprise_kb.adapters.gcp.mcp_tool_catalog:McpToolCatalogAdapter
+    platform: enterprise_kb.adapters.gcp.mcp_tool_catalog:McpToolCatalogAdapter
+    local: enterprise_kb.adapters.local.tool_catalog:LocalToolCatalogAdapter
+    onprem: enterprise_kb.adapters.onprem.tool_catalog:OnPremToolCatalogAdapter

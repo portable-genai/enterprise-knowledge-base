@@ -1,0 +1,16 @@
+Cloud Provider Onboarding Policy
+
+This policy applies to every engagement with an external cloud provider used to process
+or store bank data, in any region.
+
+Scope and ownership
+
+The Retail Technology function owns this policy. Deviations are recorded in the register.
+Due diligence before onboarding
+
+Before a cloud provider is onboarded the bank completes a security review, a resilience
+assessment and a data residency assessment, and records the outcome in the vendor file.
+
+Provider tier   Review depth   Refresh cycle
+Tier one        full           annual
+Tier two        standard       biennial

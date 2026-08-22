@@ -1,0 +1,17 @@
+Access Control Standard
+
+This standard sets the access control requirements for systems the bank classifies as
+critical.
+
+Ownership
+
+The Security function owns this standard and reviews it annually.
+
+Access control requirements for critical systems
+
+Access to a critical system is granted on least privilege, requires multi factor
+authentication, and is recertified by the system owner every quarter.
+
+Requirement            Frequency
+Access recertification quarterly
+Privileged review      monthly

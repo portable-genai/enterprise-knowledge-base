@@ -1,0 +1,57 @@
+# terraform.tfvars.example : concrete sample values for a Singapore-resident deploy.
+#
+# Copy to terraform.tfvars and fill in your own ids. Do NOT commit terraform.tfvars. No database
+# credential belongs here: AlloyDB uses per-workload IAM DB authentication. Region/zone are
+# already Singapore : leave them.
+
+project_id = "acme-enterprise-knowledge-base-sg-demo"
+
+# Singapore residency (P-03) : these are already the secure defaults; shown for clarity.
+# This reviewed infrastructure module is Singapore-only because its regional capacity and
+# private-endpoint evidence is Singapore-specific. The core runtime remains region-parametric.
+allowed_regions = ["asia-southeast1"]
+region          = "asia-southeast1"
+zone            = "asia-southeast1-a"
+
+# ~7-year WORM retention for the audit log (P-08). The lock is irreversible, so the
+# checked-in demo posture is recoverable. A named production approval flips BOTH values.
+retention_days   = 2557
+production_mode  = false
+lock_worm_bucket = false
+
+# Org / Access Context Manager. access_policy_id is the numeric policy id.
+org_id           = "123456789012"
+billing_account  = "01ABCD-2345EF-67890A"
+access_policy_id = "987654321098"
+
+# Networking for the private AlloyDB instance.
+vpc_network_name = "enterprise-knowledge-base-vpc"
+serverless_subnet_cidr = "10.42.0.0/26"
+lb_proxy_subnet_cidr   = "10.42.2.0/23"
+artifact_publisher_service_account_email = "enterprise-knowledge-base-image-publisher@acme-enterprise-knowledge-base-sg-demo.iam.gserviceaccount.com"
+control_publisher_service_account_email = "enterprise-knowledge-base-control-publisher@acme-enterprise-knowledge-base-sg-demo.iam.gserviceaccount.com"
+source_publisher_service_account_email = "enterprise-knowledge-base-source-publisher@acme-enterprise-knowledge-base-sg-demo.iam.gserviceaccount.com"
+
+# Reviewed refresh image. Tags such as :latest are rejected because they are mutable.
+refresh_job_image = "asia-southeast1-docker.pkg.dev/acme-enterprise-knowledge-base-sg-demo/enterprise-knowledge-base/refresh@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+app_image = "asia-southeast1-docker.pkg.dev/acme-enterprise-knowledge-base-sg-demo/enterprise-knowledge-base/api@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+ui_image = "asia-southeast1-docker.pkg.dev/acme-enterprise-knowledge-base-sg-demo/enterprise-knowledge-base/ui@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+corpus_registry_uri = "gs://enterprise-knowledge-base-control-acme-enterprise-knowledge-base-sg-demo/registry/registry.yaml"
+acl_bindings_uri = "gs://enterprise-knowledge-base-control-acme-enterprise-knowledge-base-sg-demo/acl/bindings.json"
+api_domain = "kb-api.example.com"
+public_dns_managed_zone = "example-com"
+iap_accessors = [
+  "group:kb-users@example.com",
+  "serviceAccount:journey-portal@acme-enterprise-knowledge-base-sg-demo.iam.gserviceaccount.com",
+]
+s2s_allowed_callers = ["journey-portal@acme-enterprise-knowledge-base-sg-demo.iam.gserviceaccount.com"]
+s2s_service_tenants = {
+  "journey-portal@acme-enterprise-knowledge-base-sg-demo.iam.gserviceaccount.com" = "bank.example"
+}
+# Flip only after release evidence identifies the active Singapore single-zone PT order.
+gemini_single_zone_pt_confirmed = false
+
+# Sovereignty perimeter on by default, in DRY-RUN mode: it logs what it would block and
+# denies nothing. Flip vpc_sc_dry_run to false only after the dry-run audit log is clean.
+enable_vpc_sc  = true
+vpc_sc_dry_run = true

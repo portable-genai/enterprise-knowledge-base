@@ -1,0 +1,34 @@
+# Retrieval-recall rubric : A4 AI Quality & Model-Risk gate (P-08).
+#
+# "Retrieval recall" measures whether the knowledge base surfaces the documents a caller
+# IS entitled to see and that the golden record marks as expected for the query. It is the
+# usefulness counterpart to acl_correctness (which guards against over-sharing): a governed
+# store must be both correct and useful.
+#
+# In set terms, for each example: |expected_doc_ids n returned_doc_ids| / |expected_doc_ids|.
+#
+# Production scorer: the Gen AI evaluation service on the Gemini Enterprise Agent Platform,
+# routed through enterprise_kb.adapters.gcp.genai_eval:GenAiEvalAdapter.
+# Offline/CI scorer: the deterministic set-based check in eval/run_eval.py.
+
+metric: retrieval_recall
+description: >
+  Fraction of the expected, permitted documents that the knowledge base returned for the
+  query. Averaged over the dataset.
+threshold: 0.80          # report fails if score < 0.80
+direction: maximize
+applies_to:
+  - RetrievedPassage.citation
+
+criteria:
+  - id: expected_documents_returned
+    description: Each expected (and permitted) document appears in the returned passages.
+    weight: 1.0
+
+scoring:
+  scale: [0.0, 1.0]
+  pass_if: "score >= threshold"
+
+notes: >
+  Recall is measured only over documents the caller is entitled to see, so a high recall
+  never trades off against acl_correctness: a forbidden document is never "expected".

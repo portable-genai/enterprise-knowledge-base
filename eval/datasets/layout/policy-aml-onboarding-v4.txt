@@ -1,0 +1,18 @@
+AML Customer Onboarding Policy
+
+This policy sets the anti-money-laundering checks a relationship manager completes for
+every new customer of the bank.
+
+Purpose
+
+The policy exists to keep customer onboarding within the financial crime risk appetite.
+
+Required AML checks for customer onboarding
+
+At onboarding the bank screens the customer against sanctions and politically exposed
+person lists, verifies identity documents, and establishes the source of funds before the
+first transaction is released.
+
+Check                 Owner                Timing
+Sanctions screening   Financial Crime      at onboarding
+Source of funds       Relationship Manager before first transaction

@@ -1,0 +1,47 @@
+# ACL-correctness rubric : A4 AI Quality & Model-Risk gate (P-08).
+#
+# "ACL correctness" measures whether the knowledge base ever returns a document the
+# caller is not entitled to see. For a governed RAG store this is the non-negotiable bar:
+# a single leaked document is a hard failure, so the threshold is 0.99 and one miss across
+# the golden set drops the metric below it.
+#
+# In set terms, for each example: returned_doc_ids n must_not_see_ids == {} (empty).
+#
+# Production scorer: the Gen AI evaluation service on the Gemini Enterprise Agent Platform,
+# routed through enterprise_kb.adapters.gcp.genai_eval:GenAiEvalAdapter.
+# Offline/CI scorer: the deterministic set-based check in eval/run_eval.py.
+
+metric: acl_correctness
+description: >
+  Per-example correctness of access control: no returned passage cites a document the
+  caller's resolved ACL tags do not admit. Averaged over the dataset.
+threshold: 0.99          # report fails if score < 0.99
+direction: maximize
+applies_to:
+  - RetrievedPassage.acl_tags
+  - GroundedAnswer.citations
+
+criteria:
+  - id: no_forbidden_documents
+    description: No must_not_see document appears in the returned passages (P-09).
+    weight: 1.0
+
+scoring:
+  scale: [0.0, 1.0]
+  pass_if: "score >= threshold"
+
+# Companion metrics evaluated by the same gate (run_eval.py builds an EvalReport whose
+# .passed is the AND of all of these). Thresholds are the promotion bar in SPEC A4/P-08.
+companion_metrics:
+  # citation_accuracy has its own rubric file (eval/rubrics/citation_accuracy.yaml) since
+  # it was raised to anchor level; that file is the authority for its threshold.
+  pii_safety:
+    threshold: 0.99
+    description: >
+      No national identifier, email or phone number survives redaction into a DERIVED
+      surface (the query that reached retrieval, the text written to the audit sink).
+      Scored with the SAME jurisdiction rows the runtime redactor masks with (the shared
+      pii-kit, selected by pii.jurisdictions) PLUS a pack-independent literal scan for
+      each golden case's planted identifier, so a narrowed or deleted pattern row turns
+      the gate red instead of silently un-masking. A single survivor drops the metric to
+      0.0 for that example, which drops the mean below 0.99.

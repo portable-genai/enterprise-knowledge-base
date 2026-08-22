@@ -1,0 +1,9 @@
+documents:
+  - id: synthetic-cloud-onboarding-v1
+    title: Fictional Cloud Provider Onboarding Policy
+    uri: gs://__RAW_SOURCE_BUCKET__/sources/cloud-onboarding-policy.txt
+    source_system: gcs
+    version: v1
+    acl_tags:
+      - dept:risk
+      - classification:internal

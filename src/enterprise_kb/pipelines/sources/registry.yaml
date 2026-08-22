@@ -1,0 +1,68 @@
+# A2 Enterprise Knowledge Base : corpus source registry.
+#
+# The repo ships ONLY this registry (a small, clearly-fictional sample). At runtime the
+# pipelines fetch each document, redact it defensively (P-04), ingest it into the governed
+# store (portable parse + regional GCS + AlloyDB chunks), and record freshness + residency in the
+# ledger with a 7-day TTL (corpus.ttl_days).
+#
+# Each entry is a Document (see domain/models.py): id, title, uri, source_system, acl_tags,
+# version. The URIs here are illustrative internal endpoints; ids are stable slugs used as
+# the ledger and AlloyDB document keys. The ACL tags gate who may retrieve each
+# document; the domain filters by the caller's resolved tag set (P-09).
+#
+# source_system : confluence | sharepoint | gcs | file_upload | policy_portal | other
+
+documents:
+  - id: policy-cloud-onboarding-v3
+    title: Cloud Provider Onboarding Policy
+    uri: https://kb.bank.test/policy/cloud-onboarding
+    source_system: policy_portal
+    version: v3
+    acl_tags:
+      - dept:retail
+      - classification:internal
+
+  - id: policy-aml-onboarding-v4
+    title: AML Customer Onboarding Policy
+    uri: https://kb.bank.test/policy/aml-onboarding
+    source_system: policy_portal
+    version: v4
+    acl_tags:
+      - dept:compliance
+      - classification:internal
+
+  - id: runbook-incident-response-v2
+    title: Incident Response Runbook
+    uri: https://kb.bank.test/runbook/incident-response
+    source_system: confluence
+    version: v2
+    acl_tags:
+      - dept:risk
+      - classification:internal
+
+  - id: standard-data-residency-v1
+    title: Data Residency Standard
+    uri: https://kb.bank.test/standard/data-residency
+    source_system: sharepoint
+    version: v1
+    acl_tags:
+      - dept:risk
+      - classification:restricted
+
+  - id: standard-access-control-v2
+    title: Access Control Standard
+    uri: https://kb.bank.test/standard/access-control
+    source_system: sharepoint
+    version: v2
+    acl_tags:
+      - dept:security
+      - classification:internal
+
+  - id: guide-customer-service-genai-v1
+    title: Customer-Service GenAI Usage Guide
+    uri: https://kb.bank.test/guide/genai-customer-service
+    source_system: confluence
+    version: v1
+    acl_tags:
+      - dept:retail
+      - classification:internal

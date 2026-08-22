@@ -1,0 +1,75 @@
+{
+  "profile": "local",
+  "region": "asia-southeast1",
+  "ingest": {
+    "ok": true,
+    "chunks": 1,
+    "indexed_text": "Escalations to [EMAIL] or NRIC [NRIC].",
+    "redacted": [
+      {"info_type": "SG_NRIC_FIN", "count": 1},
+      {"info_type": "EMAIL_ADDRESS", "count": 1}
+    ]
+  },
+  "personas": [
+    {
+      "key": "retail",
+      "passages": [{"document_id": "policy-cloud-onboarding-v3"}],
+      "answer": {
+        "requires_human_review": true,
+        "review_level": "standard",
+        "review_reasons": [],
+        "refused": false,
+        "confidence": 0.86,
+        "citations": [{"document_id": "policy-cloud-onboarding-v3", "page": 4}]
+      }
+    },
+    {
+      "key": "risk",
+      "passages": [
+        {"document_id": "standard-data-residency-v1"},
+        {"document_id": "notice-code-of-conduct-v1"}
+      ],
+      "answer": {
+        "requires_human_review": true,
+        "review_level": "enhanced",
+        "review_reasons": ["sensitive_classification"],
+        "refused": false,
+        "confidence": 0.86,
+        "citations": [
+          {"document_id": "standard-data-residency-v1", "page": 1},
+          {"document_id": "notice-code-of-conduct-v1", "page": 1}
+        ]
+      }
+    },
+    {
+      "key": "unknown",
+      "passages": [],
+      "answer": {
+        "requires_human_review": true,
+        "review_level": "enhanced",
+        "review_reasons": ["no_grounding_passages"],
+        "refused": true,
+        "confidence": 0.0,
+        "citations": []
+      }
+    }
+  ],
+  "audit": {
+    "entries": 10,
+    "chained": 10,
+    "chain_ok": true,
+    "raw_pii_absent": true,
+    "actions": [
+      "ingest",
+      "search",
+      "search",
+      "answer",
+      "search",
+      "search",
+      "answer",
+      "search",
+      "search",
+      "answer"
+    ]
+  }
+}

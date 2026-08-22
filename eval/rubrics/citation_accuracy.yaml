@@ -1,0 +1,55 @@
+# Citation-accuracy rubric : A4 AI Quality & Model-Risk gate (P-08).
+#
+# "Citation accuracy" used to ask whether a returned passage carried a page-level citation
+# to a real corpus document. That bar could not distinguish a citation that points a
+# reviewer at the right paragraph from one that points at the right forty-page document,
+# and a pipeline that stamps a page on everything scored 1.0 on it forever.
+#
+# It is now scored at ANCHOR level: each golden example declares a synthetic grounded
+# claim and, per document, the layout-block anchor a human reads as supporting that claim
+# in the fixture under eval/datasets/layout/. The gate parses those fixtures with the
+# shipped layout-aware parser, stores the blocks through the real CitationStorePort
+# adapter, resolves the claim with the real deterministic domain resolver, and compares
+# the anchor that comes out with the anchor the dataset declares.
+#
+# The expectation is an INDEPENDENT oracle: it is authored from the fixture text and is
+# never read back from the pipeline's own output, so a resolver that drifts to the
+# neighbouring block turns this metric red instead of agreeing with itself. run_eval.py's
+# self_check proves the metric can go red on a declared-anchor mismatch before any green
+# run is trusted (systemic finding 8).
+#
+# Production scorer: the Gen AI evaluation service on the Gemini Enterprise Agent Platform,
+# routed through enterprise_kb.adapters.gcp.genai_eval:GenAiEvalAdapter.
+# Offline/CI scorer: the deterministic check in eval/run_eval.py.
+
+metric: citation_accuracy
+description: >
+  Per-passage correctness of provenance at anchor level: the citation names a real corpus
+  document and page, resolution yields both an anchor and a bounding box, and that anchor
+  equals the golden anchor for the example's claim. Averaged over the dataset.
+threshold: 0.98          # raised from 0.90 when the metric moved from page to anchor level
+direction: maximize
+applies_to:
+  - RetrievedPassage.citation
+  - GroundedAnswer.citations
+
+criteria:
+  - id: real_document_and_page
+    description: The citation names a corpus document and carries a page (the former bar).
+    weight: 0.0
+  - id: anchor_and_box_present
+    description: Resolution produced a block anchor AND a bounding box to highlight.
+    weight: 0.0
+  - id: anchor_matches_golden
+    description: The resolved anchor equals the dataset's declared anchor for the claim.
+    weight: 1.0
+
+scoring:
+  scale: [0.0, 1.0]
+  pass_if: "score >= threshold"
+
+notes: >
+  All three criteria are required for a passage to score 1.0; the weights record which one
+  carries the raised bar. A claim that cannot be resolved above the bank-owned
+  policy.citation.anchor_match_floor scores 0.0 here rather than silently passing at page
+  level, which is what makes the gate a gate.

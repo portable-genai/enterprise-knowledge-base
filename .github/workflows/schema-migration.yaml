@@ -1,0 +1,39 @@
+name: Managed schema migration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: enterprise-knowledge-base-schema-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    # This labelled runner must have private VPC reachability plus reviewed psql and
+    # alloydb-auth-proxy binaries. A public GitHub runner cannot reach private AlloyDB.
+    runs-on: [self-hosted, linux, hrz2-vpc]
+    environment: schema-migration
+    env:
+      KB_ALLOYDB_URI: ${{ vars.KB_ALLOYDB_URI }}
+      KB_MIGRATION_IAM_DB_USER: ${{ vars.KB_MIGRATION_IAM_DB_USER }}
+      KB_APP_IAM_DB_USER: ${{ vars.KB_APP_IAM_DB_USER }}
+      KB_PIPELINE_IAM_DB_USER: ${{ vars.KB_PIPELINE_IAM_DB_USER }}
+      KB_SCHEMA_EVIDENCE_DIR: evidence/schema-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Authenticate dedicated migration service account
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2ee3c9 # v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.MIGRATION_SERVICE_ACCOUNT }}
+      - name: Preflight, bootstrap, migrate and emit evidence
+        run: scripts/apply_managed_schema.sh
+      - name: Print non-secret evidence into the retained workflow log
+        run: |
+          cat "$KB_SCHEMA_EVIDENCE_DIR/migration-sha256.txt"
+          cat "$KB_SCHEMA_EVIDENCE_DIR/preflight.txt"
+          cat "$KB_SCHEMA_EVIDENCE_DIR/table-grants.txt"

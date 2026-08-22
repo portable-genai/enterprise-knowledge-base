@@ -1,0 +1,17 @@
+Incident Response Runbook
+
+This runbook covers the handling of a major technology incident affecting customer
+service or bank data.
+
+Severity definitions
+
+A major incident is one that degrades a customer-facing service or exposes bank data.
+
+Notification of the risk function during a major incident
+
+The risk function is notified within thirty minutes of a major incident being declared,
+and a written update follows every hour until the incident is closed.
+
+Controls applying to the incident response process
+
+Every declared incident is logged, assigned an owner, and reviewed after closure.

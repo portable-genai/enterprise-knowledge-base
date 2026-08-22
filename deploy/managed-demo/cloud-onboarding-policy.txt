@@ -1,0 +1,6 @@
+FICTIONAL DEMO POLICY — NOT A REAL BANK CONTROL
+
+Cloud providers must complete risk, security, privacy, resilience, and exit assessments before
+onboarding. Evidence must identify the accountable owner, approved data classification, reviewed
+residency region, recovery objectives, subcontractors, and an executable exit plan. A human
+reviewer records the decision; this system supplies cited evidence and never approves a provider.
