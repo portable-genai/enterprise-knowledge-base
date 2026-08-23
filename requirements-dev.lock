@@ -124,7 +124,7 @@ respx==0.23.1
     # via enterprise-knowledge-base (pyproject.toml)
 rich==15.0.0
     # via typer
-ruff==0.15.18
+ruff==0.16.3
     # via enterprise-knowledge-base (pyproject.toml)
 shellingham==1.5.4
     # via typer
