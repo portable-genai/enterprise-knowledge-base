@@ -36,7 +36,7 @@ jobs:
     runs-on: [self-hosted, linux, hrz2-vpc]
     environment: managed-bootstrap
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Authenticate the deployment identity with WIF
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2ee3c9 # v2
         with:
@@ -45,7 +45,7 @@ jobs:
       - name: Install gcloud
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v2
       - name: Install Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
       - name: Refuse an ungoverned or non-Singapore state backend
         run: |
           set -euo pipefail
@@ -90,7 +90,7 @@ jobs:
     runs-on: [self-hosted, linux, hrz2-vpc]
     environment: managed-bootstrap
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Authenticate the repository-scoped publisher with WIF
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2ee3c9 # v2
         with:
@@ -128,7 +128,7 @@ jobs:
             printf '%s = "%s/%s@%s"\n' "$variable" "$registry" "$image" "$digest"
           done > managed-image-digests.tfvars
       - name: Retain immutable digest evidence for phase 2
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: managed-image-digests-${{ inputs.release_id }}
           path: managed-image-digests.tfvars
@@ -141,14 +141,14 @@ jobs:
     runs-on: [self-hosted, linux, hrz2-vpc]
     environment: managed-release
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Authenticate the deployment identity with WIF
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2ee3c9 # v2
         with:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.DEPLOY_SERVICE_ACCOUNT }}
       - name: Install Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
       - name: Download phase-1 image digests
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
@@ -197,14 +197,14 @@ jobs:
     runs-on: [self-hosted, linux, hrz2-vpc]
     environment: managed-release
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Authenticate the passwordless migration identity
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2ee3c9 # v2
         with:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.MIGRATION_SERVICE_ACCOUNT }}
       - name: Install Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
       - name: Load state and run the audited 000 then 001 migrations
         env:
           TERRAFORM_TFVARS_JSON: ${{ secrets.TERRAFORM_TFVARS_JSON }}
@@ -227,7 +227,7 @@ jobs:
           KB_PIPELINE_IAM_DB_USER=$(jq -er .pipeline <<<"$users")
           scripts/apply_managed_schema.sh
       - name: Retain non-secret migration evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: managed-schema-evidence-${{ inputs.release_id }}
           path: evidence/
@@ -238,7 +238,7 @@ jobs:
     runs-on: [self-hosted, linux, hrz2-vpc]
     environment: managed-release
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Authenticate the deployment identity to read reviewed outputs
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2ee3c9 # v2
         with:
@@ -247,7 +247,7 @@ jobs:
       - name: Install gcloud
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v2
       - name: Install Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
       - name: Resolve the exact managed artifact locations
         env:
           TERRAFORM_TFVARS_JSON: ${{ secrets.TERRAFORM_TFVARS_JSON }}
@@ -306,7 +306,7 @@ jobs:
           gcloud run jobs execute "$REFRESH_JOB_NAME" --project "$PROJECT_ID"
           --region "$REGION" --wait
       - name: Retain artifact checksums and presenter handoff
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: managed-demo-artifacts-${{ inputs.release_id }}
           path: rendered-managed-demo/
