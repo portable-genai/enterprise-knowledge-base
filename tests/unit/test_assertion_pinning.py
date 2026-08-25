@@ -23,6 +23,7 @@ import ast
 import base64
 import inspect
 import json as _json
+from types import SimpleNamespace
 
 import pytest
 from hex_service_kit import assertion as kit_assertion
@@ -203,7 +204,11 @@ class TestTheAudienceReadKeepsItsThreeStates:
         monkeypatch.delenv("KB_IAP_AUDIENCE", raising=False)
         if raw is not None:
             monkeypatch.setenv("KB_IAP_AUDIENCE", raw)
-        return IapIdentityAdapter(object())
+        # A settings stub with just the attributes this adapter's __init__ reads. The real
+        # Settings needs a profile and a config file; the audience comes from the
+        # environment, which is the thing under test.
+        settings = SimpleNamespace(iap=SimpleNamespace(service_tenants={}))
+        return IapIdentityAdapter(settings)  # type: ignore[arg-type]
 
     def _refusal(self, adapter: object) -> str:
         from enterprise_kb.domain.identity import IdentityError, RequestContext
