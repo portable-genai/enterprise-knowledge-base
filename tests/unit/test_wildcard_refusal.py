@@ -168,23 +168,94 @@ def test_a_total_lockdown_is_still_expressible() -> None:
     assert _frame_ancestors("'none'") == "'none'"
 
 
-def test_the_console_document_policy_refuses_the_same_spellings() -> None:
+def _frame_ancestors_via_node(value: str) -> subprocess.CompletedProcess[str]:
+    """Call the console's real ``frameAncestors`` with ``value`` and report what it did.
+
+    Shelling out to node is the point. This test used to GREP ``csp.mjs`` for the literals
+    the policy is written with, and the second re-audit pass proved that vacuous by
+    execution: changing the guard to ``if (false && isWildcard(part))`` leaves every grepped
+    string exactly where it was, so the whole Python suite stayed green with the
+    clickjacking control switched off.
+
+    A string a file contains is not a behaviour the file has. The only way to assert the
+    second is to run it.
+    """
+    script = (
+        "import { frameAncestors } from './ui/lib/csp.mjs';"
+        "try { console.log('ALLOWED:' + frameAncestors({NEXT_PUBLIC_FRAME_ANCESTORS: "
+        f"{value!r}"
+        "})); }"
+        "catch (error) { console.log('REFUSED:' + error.message); }"
+    ).replace("'", '"', 0)
+    return subprocess.run(
+        [_node(), "--input-type=module", "-e", script],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+
+
+def _node() -> str:
+    """Node, or a failure. Never a skip.
+
+    A skip here would restore exactly the defect this test was rewritten to close: evidence
+    that reports the same green whether or not it ran. ``make check`` already requires node
+    for ``ui-check``, so this adds no dependency the gate did not have.
+    """
+    from shutil import which
+
+    found = which("node")
+    if found is None:
+        raise AssertionError(
+            "node is required to execute the console's CSP policy. This test refuses to skip: "
+            "the grep-based version it replaced passed while the clickjacking control was off, "
+            "and a skip is the same green for the same reason."
+        )
+    return found
+
+
+@pytest.mark.parametrize("spelling", sorted(_ORIGIN_WILDCARDS))
+def test_the_console_document_policy_refuses_the_same_spellings(spelling: str) -> None:
     """The CSP a browser enforces for the console page comes from the UI, not from here.
 
     Closing only the API would leave the more directly exploitable surface open: the console
-    document is served by Next.js and never passes through this middleware. The behavioural
-    half lives in ``ui/tests/csp.test.mjs`` (``node --test ui/tests/csp.test.mjs``); this is the
-    drift guard the Python gate can run, since the gate does not shell out to node.
+    document is served by Next.js and never passes through this middleware.
+
+    Executed, not grepped. ``ui/tests/csp.test.mjs`` asserts the same behaviour and is the
+    richer suite, but it runs behind ``npm ci`` and therefore behind a network; this half
+    runs in the Python gate with nothing but node.
     """
-    module = (REPO_ROOT / "ui" / "lib" / "csp.mjs").read_text(encoding="utf-8")
-    for spelling in _ORIGIN_WILDCARDS:
-        assert f'"{spelling}"' in module, f"the UI policy does not name {spelling}"
-    # Both halves of the union, because both surfaces held only the token half until now and a
-    # drift guard that checks one half would not have caught the gap it exists to catch.
-    assert "FRAME_ANCESTOR_WILDCARDS.has(part)" in module
-    assert 'part.includes("*")' in module
-    assert "isWildcard(part)" in module
-    assert "never contain a wildcard" in module
+    result = _frame_ancestors_via_node(spelling)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.startswith("REFUSED:"), (
+        f"the console policy ACCEPTED {spelling!r} as a framing ancestor: {result.stdout.strip()}"
+    )
+    assert "never contain a wildcard" in result.stdout
+
+
+def test_the_console_policy_refuses_a_host_source_wildcard() -> None:
+    """The half a Set cannot match, and the half most likely to be reached in practice.
+
+    ``https://*.evil.example`` is in no set and was emitted verbatim; CSP honours it as every
+    subdomain, including one an attacker obtained by takeover.
+    """
+    result = _frame_ancestors_via_node("https://*.evil.example")
+
+    assert result.stdout.startswith("REFUSED:"), result.stdout
+
+
+def test_the_console_policy_still_accepts_a_real_origin() -> None:
+    """The allow path, so the refusal above cannot be satisfied by a policy that refuses all.
+
+    Without this, ``throw new Error()`` on every input would pass every test above.
+    """
+    result = _frame_ancestors_via_node("https://portal.example")
+
+    assert result.stdout.startswith("ALLOWED:"), result.stdout
+    assert "https://portal.example" in result.stdout
 
 
 if __name__ == "__main__":  # pragma: no cover
