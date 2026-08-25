@@ -48,8 +48,8 @@ gcp = [
   "opentelemetry-exporter-gcp-trace>=1.7",
   "google-cloud-alloydb-connector[pg8000]>=1.4",
   "sqlalchemy>=2.0",
-  "a2a-sdk>=0.2",
-  "mcp>=1.2",
+  "a2a-sdk>=1.1",
+  "mcp>=2.1",
 ]
 dev = [
   # Shared commons: the --mode smoke|gate scaffold + report rendering used by

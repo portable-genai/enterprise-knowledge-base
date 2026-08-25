@@ -76,7 +76,7 @@ SDK-free workaround. See `README.md` for the exact "Run locally" seed and comman
 - Models: reasoning and triage both use `gemini-3.5-flash` against one reviewed Singapore
   single-zone Provisioned Throughput order. Managed calls carry the dedicated-request header;
   Standard PayGo is not an admissible Singapore deployment posture.
-  Unified SDK `google-genai`. ADK `google-adk==2.3.0`. A2A v1.0 + MCP 2025-11-25.
+  Unified SDK `google-genai`. ADK `google-adk==2.7.1`. A2A v1.0 + MCP 2026-07-28.
 - Audit: Cloud Logging locked WORM bucket, retention 2557 days. Tracing: Cloud Trace via
   OpenTelemetry, message-content capture OFF. Eval: deterministic portable gate.
 - `[gcp]` extra holds all `google-cloud-*` / `google-adk` / `google-genai` plus
