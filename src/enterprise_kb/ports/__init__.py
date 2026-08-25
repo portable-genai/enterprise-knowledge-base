@@ -8,7 +8,7 @@ satisfies the same contract.
 from .citations import CitationStorePort
 from .generation import GroundingPort, LLMPort
 from .governance import AgentRegistryPort, ToolCatalogPort
-from .identity import IdentityPort
+from .identity import EndUserAuthUnavailableError, IdentityPort
 from .ingestion import FreshnessLedgerPort, IngestionPort
 from .observability import (
     AuditSinkPort,
@@ -42,4 +42,5 @@ __all__ = [
     "AgentRegistryPort",
     "ToolCatalogPort",
     "IdentityPort",
+    "EndUserAuthUnavailableError",
 ]
