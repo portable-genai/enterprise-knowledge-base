@@ -5,7 +5,7 @@ registers. Identity fields are intentionally absent: actor, tenant and ACL entit
 resolved from a trusted server context beside tool invocation. Corpus mutation belongs only to
 the pipeline identity and is not advertised as an MCP/model capability.
 
-Interop: the catalog speaks **MCP 2025-11-25**. In an ADK deployment these specs are
+Interop: the catalog speaks **MCP 2026-07-28**. In an ADK deployment these specs are
 surfaced to the agent through an ``McpToolset`` connected to an MCP server that fronts the
 domain services; here the adapter only *declares* the governed catalog. The ``mcp``
 package is imported lazily and only when an actual MCP wire object is requested.
@@ -19,7 +19,7 @@ from ...config import Settings
 from ...domain.models import ToolSpec
 
 # MCP protocol revision this catalog conforms to.
-MCP_PROTOCOL_VERSION = "2025-11-25"
+MCP_PROTOCOL_VERSION = "2026-07-28"
 
 _FILTERS_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -68,7 +68,7 @@ def _build_catalog() -> dict[str, ToolSpec]:
 
 
 class McpToolCatalogAdapter:
-    """Declarative MCP 2025-11-25 catalog of A2's verified-context read tools."""
+    """Declarative MCP 2026-07-28 catalog of A2's verified-context read tools."""
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
@@ -87,10 +87,10 @@ class McpToolCatalogAdapter:
     # MCP wire helpers (lazy ``mcp`` import : only when actually used)
     # ------------------------------------------------------------------ #
     def as_mcp_tools(self) -> list[Any]:
-        """Render the catalog as MCP ``Tool`` objects (MCP 2025-11-25 schema)."""
+        """Render the catalog as MCP ``Tool`` objects (MCP 2026-07-28 schema)."""
         from mcp import types as mcp_types  # lazy
 
-        # verify: https://modelcontextprotocol.io/specification/2025-11-25
+        # verify: https://modelcontextprotocol.io/specification/2026-07-28
         return [
             mcp_types.Tool(
                 name=spec.name,
