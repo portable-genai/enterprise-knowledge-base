@@ -43,6 +43,7 @@ from hex_service_kit.federation import IAP_ASSERTION_HEADER
 from hex_service_kit.web import make_require_service_caller
 
 from ..domain.identity import IdentityError, Principal, RequestContext
+from ..ports.identity import EndUserAuthUnavailableError
 from . import deps
 
 # S2S env-var NAMES (not secret values). The KB_ prefix mirrors KB_PROFILE / KB_SETTINGS.
@@ -61,6 +62,11 @@ def get_principal(request: Request) -> Principal:
     ctx = RequestContext(headers={k.lower(): v for k, v in request.headers.items()})
     try:
         return deps.get_container().identity.resolve(ctx)
+    except EndUserAuthUnavailableError as exc:
+        # Ordered before the IdentityError branch, and it has to be: this is a subclass, so the
+        # broader branch would swallow it and answer the 401 this whole split exists to avoid.
+        # The message is the operator's, not the caller's, and it names the thing to fix.
+        raise HTTPException(status_code=exc.http_status, detail=str(exc)) from exc
     except IdentityError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
