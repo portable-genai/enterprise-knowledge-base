@@ -18,7 +18,7 @@ dependencies = [
   # Shared commons, pinned by tag; no build-time coupling. Public repo, so CI
   # installs it with zero credentials. hex-service-kit: inbound S2S verification (web), outbound
   # S2S headers, fail-closed net defaults, StrEnum base, to_jsonable, hash-chained WORM audit.
-  "hex-service-kit @ git+https://github.com/portable-genai/hex-service-kit@v0.0.1",
+  "hex-service-kit @ git+https://github.com/portable-genai/hex-service-kit@v0.0.2",
   # Shared jurisdiction PII pack, pinned by tag. One pattern source for the runtime
   # redactor (local regex + the GCP DLP custom info types) and the eval pii_safety
   # metric, so a non-home-jurisdiction fork cannot inherit a falsely green gate (C4/E2).

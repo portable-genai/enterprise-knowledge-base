@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Any
 
 from hex_service_kit.assertion import require_claims, require_pinned_algorithm
+from hex_service_kit.federation import IAP_ASSERTION_HEADER, IAP_ISSUER, IAP_KEYS_URL
 from hex_service_kit.identity import IdentityError as AssertionRefused
 
 from ...config import Settings
@@ -22,9 +23,17 @@ from ...domain.identity import IdentityError, Principal, RequestContext
 from ...envread import read_env_setting
 from ...ports.identity import VERIFIED
 
-_ASSERTION_HEADER = "x-goog-iap-jwt-assertion"
-_IAP_KEYS_URL = "https://www.gstatic.com/iap/verify/public_key"
-_IAP_ISSUER = "https://cloud.google.com/iap"
+# This repository's names for the kit's transport facts. They are REBOUND, not re-declared:
+# the header name, the issuer and the key-set URL are the same three strings in every
+# repository that verifies an IAP assertion, and while each kept its own copy the population
+# could drift without anything noticing. Rebinding makes a divergence between this adapter and
+# the reviewed set impossible rather than merely unlikely.
+#
+#: ``verify_token`` does not check the issuer at all (``verify_oauth2_token`` is the wrapper
+#: that does), so this adapter checks it itself against the kit's value.
+_ASSERTION_HEADER = IAP_ASSERTION_HEADER
+_IAP_KEYS_URL = IAP_KEYS_URL
+_IAP_ISSUER = IAP_ISSUER
 
 #: The claims this deployment requires before it reads any of them. `email` is required
 #: outright now: it drives the reviewed service-account tenant mapping below, and an absent
@@ -45,7 +54,16 @@ class IapIdentityAdapter:
         # Expected audience: the IAP-protected resource. For an HTTPS LB + IAP it is
         # "/projects/<NUM>/global/backendServices/<ID>"; for App Engine/Cloud Run IAP it is
         # "/projects/<NUM>/apps/<ID>". Configure via KB_IAP_AUDIENCE; required in secure mode.
-        self._audience = read_env_setting("KB_IAP_AUDIENCE").value
+        #
+        # Read as THREE states, not two. Reading ``.value`` alone collapses unset and
+        # set-and-empty onto the same empty string. Both states refuse identically and always
+        # did, so nothing here widens or narrows what is accepted; what was lost was the
+        # ability to tell an operator which mistake they made, and an operator told 'not
+        # configured' about a variable that was present and blank goes looking for the wrong
+        # thing.
+        _audience_setting = read_env_setting("KB_IAP_AUDIENCE")
+        self._audience = _audience_setting.value
+        self._audience_configured_empty = _audience_setting.is_configured_empty
         self._service_tenants = dict(settings.iap.service_tenants)
 
     def resolve(self, ctx: RequestContext) -> Principal:
@@ -53,7 +71,13 @@ class IapIdentityAdapter:
         if not assertion:
             raise IdentityError("missing IAP assertion header; request did not pass through IAP")
         if not self._audience:
-            raise IdentityError("KB_IAP_AUDIENCE is not configured; cannot verify IAP assertion")
+            raise IdentityError(
+                "KB_IAP_AUDIENCE is set to an empty value, which names nothing; cannot verify "
+                "IAP assertion. Unset it to leave the setting absent, or give it the "
+                "IAP-protected resource."
+                if self._audience_configured_empty
+                else "KB_IAP_AUDIENCE is not configured; cannot verify IAP assertion"
+            )
         # The algorithm is judged before the verifier is handed the token: no cryptography, no
         # cloud SDK, so the refusal is exercised by the offline gate rather than living inside a
         # library the gate never installs.

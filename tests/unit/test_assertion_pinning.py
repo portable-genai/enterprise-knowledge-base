@@ -26,11 +26,12 @@ import json as _json
 
 import pytest
 from hex_service_kit import assertion as kit_assertion
+from hex_service_kit import federation as kit_federation
 from hex_service_kit.identity import IdentityError as KitIdentityError
 
 from enterprise_kb.adapters.gcp.iap_identity import IapIdentityAdapter
 
-_IAP_ISSUER = "https://cloud.google.com/iap"
+_IAP_ISSUER = kit_federation.IAP_ISSUER
 _AUDIENCE = "/projects/1234567890/global/backendServices/42"
 
 
@@ -186,3 +187,69 @@ def test_the_algorithm_is_pinned_before_the_verifier_runs() -> None:
         f"the algorithm pin is called at line {pinned_at} and the verifier at line "
         f"{verified_at}. A pin after verification never protected the verifier."
     )
+
+
+class TestTheAudienceReadKeepsItsThreeStates:
+    """The audience read must tell an operator WHICH mistake they made.
+
+    ``KB_IAP_AUDIENCE`` has three states: unset, set-and-empty, set-and-valid. The adapter
+    read it through ``read_env_setting(...).value``, which collapses the first two onto ``""``.
+    Neither state authenticates anybody, so this is a diagnosability defect rather than a
+    permissive audience: an operator who deployed the variable as an empty string was told it
+    "is not configured", and went looking for a missing variable that was present and blank.
+    """
+
+    def _adapter(self, monkeypatch: pytest.MonkeyPatch, raw: str | None) -> object:
+        monkeypatch.delenv("KB_IAP_AUDIENCE", raising=False)
+        if raw is not None:
+            monkeypatch.setenv("KB_IAP_AUDIENCE", raw)
+        return IapIdentityAdapter(object())
+
+    def _refusal(self, adapter: object) -> str:
+        from enterprise_kb.domain.identity import IdentityError, RequestContext
+
+        ctx = RequestContext(headers={"x-goog-iap-jwt-assertion": "a.b.c"})
+        with pytest.raises(IdentityError) as caught:
+            adapter.resolve(ctx)  # type: ignore[attr-defined]
+        return str(caught.value)
+
+    def test_an_unset_audience_says_it_is_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        assert "not configured" in self._refusal(self._adapter(monkeypatch, None))
+
+    def test_a_configured_empty_audience_is_not_reported_as_unset(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # RED before the fix: the message read "is not configured", sending an operator to look
+        # for a variable that was present and empty.
+        message = self._refusal(self._adapter(monkeypatch, ""))
+
+        assert "empty" in message, f"configured-empty was reported as unset: {message!r}"
+
+    def test_a_whitespace_only_audience_is_not_reported_as_unset(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # A deployment template that rendered the variable blank is the common way to get here.
+        assert "empty" in self._refusal(self._adapter(monkeypatch, "   "))
+
+    def test_neither_empty_state_ever_verifies_an_assertion(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The security outcome is identical in both states and must stay identical: an empty
+        # audience is never handed to the verifier, because google-auth documents
+        # ``audience=None`` as "the audience is not verified".
+        for raw in (None, "", "   "):
+            assert self._adapter(monkeypatch, raw)._audience == ""  # type: ignore[attr-defined]
+
+
+def test_the_transport_facts_are_the_commons_values() -> None:
+    """The header, the issuer and the key set are REBOUND from the kit, not re-declared.
+
+    These three strings were copied into every repository that verifies an IAP assertion,
+    which is fifty-four chances for one of them to be edited alone. Asserting them against the
+    kit means a local re-declaration that drifts fails here rather than in a deployment.
+    """
+    from enterprise_kb.adapters.gcp import iap_identity
+
+    assert iap_identity._ASSERTION_HEADER == kit_federation.IAP_ASSERTION_HEADER
+    assert iap_identity._IAP_ISSUER == kit_federation.IAP_ISSUER
+    assert iap_identity._IAP_KEYS_URL == kit_federation.IAP_KEYS_URL

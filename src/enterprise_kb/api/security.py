@@ -39,6 +39,7 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
+from hex_service_kit.federation import IAP_ASSERTION_HEADER
 from hex_service_kit.web import make_require_service_caller
 
 from ..domain.identity import IdentityError, Principal, RequestContext
@@ -116,7 +117,7 @@ def require_service_caller(request: Request) -> None:
     """
     choice = deps.get_settings().choice
     authorization = request.headers.get("authorization", "").strip()
-    iap_assertion = request.headers.get("x-goog-iap-jwt-assertion", "").strip()
+    iap_assertion = request.headers.get(IAP_ASSERTION_HEADER, "").strip()
 
     # The exact IAP-fronted browser path carries a verified end-user assertion but cannot mint
     # a service-account OIDC bearer. Governed routes also require CurrentPrincipal, which verifies
