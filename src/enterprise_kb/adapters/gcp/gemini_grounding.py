@@ -47,7 +47,8 @@ class GeminiGoogleSearchGroundingAdapter:
             self._client = genai.Client(
                 vertexai=True,
                 project=self._settings.project_id,
-                location=self._settings.region,
+                # MODEL location, not the compute region.
+                location=self._settings.models.location,
             )
         return self._client
 

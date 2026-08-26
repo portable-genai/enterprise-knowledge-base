@@ -164,9 +164,13 @@ def resolve_profile(
 
 @dataclass(frozen=True)
 class ModelSettings:
-    reasoning: str = "gemini-3.5-flash"
+    #: The Vertex location the model client calls, NOT the compute region. Gemini 3
+    #: serves the `us` and `eu` multi-regions only; `global` carries no residency
+    #: guarantee. See models.location in config/settings.yaml.
+    location: str = "us"
+    reasoning: str = "gemini-3.7-flash"
     triage: str = "gemini-3.5-flash"  # shares required Singapore single-zone PT
-    hard_reasoning: str = "gemini-3.1-pro"  # Preview : feature-flagged off by default
+    hard_reasoning: str = "gemini-3.7-flash"  # Preview : feature-flagged off by default
     use_hard_reasoning: bool = False
 
 

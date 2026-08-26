@@ -51,7 +51,8 @@ class GeminiLLMAdapter:
             self._client = genai.Client(
                 vertexai=True,
                 project=self._settings.project_id,
-                location=self._settings.region,
+                # MODEL location, not the compute region.
+                location=self._settings.models.location,
                 # Gemini 3.5 Flash in Singapore is served only through Single-Zone
                 # Provisioned Throughput.  Explicitly select the dedicated capacity
                 # contract; falling back to shared/PayGo would fail in this region and
