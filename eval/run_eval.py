@@ -401,7 +401,7 @@ class FakeAuditSink:
 class FakeLLMAdapter:
     """Unused by the search path; present so the service constructs cleanly."""
 
-    model = "gemini-3.5-flash"
+    model = "gemini-3.7-flash"
 
     def generate(self, request):  # type: ignore[no-untyped-def] - not called by search
         from enterprise_kb.domain.models import LlmResponse

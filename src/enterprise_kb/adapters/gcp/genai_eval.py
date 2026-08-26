@@ -45,7 +45,8 @@ class GenAiEvalAdapter:
             # verify: https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation
             self._client = vertexai.Client(
                 project=self._settings.project_id,
-                location=self._settings.region,
+                # MODEL location, not the compute region.
+                location=self._settings.models.location,
             )
         return self._client.evals
 
