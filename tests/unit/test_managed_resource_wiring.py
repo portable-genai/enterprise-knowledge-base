@@ -115,8 +115,12 @@ def test_managed_gemini_requires_reviewed_singapore_single_zone_pt() -> None:
     assert "default     = false" in variables
     assert "var.gemini_single_zone_pt_confirmed" in api
     assert "Standard PayGo is unsupported" in api
-    assert "reasoning: gemini-3.7-flash" in config
-    assert "triage: gemini-3.7-flash" in config
+    # The pin must match the reviewed PT order managed_api.tf already names: Singapore
+    # single-zone Gemini 3.5 Flash. Until 2026-08-27 this asserted gemini-3.7-flash at the
+    # `us` multi-region, so the drift guard was holding the config AGAINST the infra.
+    assert "reasoning: gemini-3.5-flash" in config
+    assert "triage: gemini-3.5-flash" in config
+    assert "location: ${KB_MODEL_LOCATION:-asia-southeast1}" in config
     assert "KB_REGION" in api and "= var.region" in api
     assert 'name  = "KB_REGION"' in scheduler
     assert not (ROOT / "infra/terraform/dlp.tf").exists()

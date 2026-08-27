@@ -24,21 +24,26 @@ grounding_enabled: ${KB_GROUNDING_ENABLED:-false}
 
 models:
   # `location` is the Vertex location the model client calls, and it is DELIBERATELY NOT
-  # `region`. The client was built with the compute region until 2026-08-27, which capped every
-  # deployment at what its own region serves: us-central1 serves the 2.5 family and no Gemini 3,
-  # so the ids pinned below could never resolve there. gemini-3.1-pro, previously the
-  # hard-reasoning pin, resolves in NO location at all.
+  # `region`: the two are separate axes and a client built from the compute region caps the
+  # deployment at whatever that region happens to serve.
   #
-  # Gemini 3.7 serves the `us` and `eu` MULTI-REGIONS only -- not `asia`, and not any single
-  # region. A multi-region endpoint pools capacity within one geography and Google documents ML
-  # processing as staying inside it, where `global` carries NO residency guarantee. So `us` here
-  # is a residency-preserving choice, an EU deployment sets `eu`, and an APAC deployment cannot
-  # have both Gemini 3 and in-region processing: it must either pin a 2.5 model its own region
-  # serves or accept `global` and say so. Do not quietly set `global`.
-  location: ${KB_MODEL_LOCATION:-us}
-  reasoning: gemini-3.7-flash          # GA : grounded-answer synthesis (thinking=high)
-  triage: gemini-3.7-flash             # same reviewed Singapore single-zone PT order
-  hard_reasoning: gemini-3.7-flash  # no Gemini 3 PRO tier serves us or eu
+  # Verified 2026-08-27 against Google's data-residency table (page updated 2026-08-26):
+  # `gemini-3.5-flash` is served in `asia-southeast1` AND carries a documented Singapore
+  # ML-processing commitment, so an APAC deployment gets a Gemini 3 model with genuine
+  # in-country processing. This file used to say the opposite -- that APAC had to choose
+  # between Gemini 3 and residency, and had to settle for a 2.5 model or `global`. That was
+  # wrong, and it is why every repo here pinned `us` and shipped a fleet-wide, mostly
+  # unstated deviation: prompts left the region on a build whose headline claim is residency.
+  #
+  # `gemini-3.7-flash` serves the `us` and `eu` MULTI-REGIONS only -- not `asia`, and not any
+  # single region. It remains reachable, but only through the deviation process the region
+  # decision record defines: the service named, the reason it cannot run in-region, a
+  # data-flow record, and the security owner's approval. Set the env override to take it.
+  # Do NOT set `global`: it carries no residency guarantee of any kind.
+  location: ${KB_MODEL_LOCATION:-asia-southeast1}
+  reasoning: gemini-3.5-flash          # GA : grounded-answer synthesis (thinking=high)
+  triage: gemini-3.5-flash             # same reviewed Singapore single-zone PT order
+  hard_reasoning: gemini-3.5-flash  # in-region SG commitment; no Gemini 3 PRO tier serves any location
   use_hard_reasoning: false
 
 storage:
