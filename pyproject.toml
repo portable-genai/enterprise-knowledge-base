@@ -48,7 +48,7 @@ gcp = [
   "opentelemetry-exporter-gcp-trace>=1.7",
   "google-cloud-alloydb-connector[pg8000]>=1.4",
   "sqlalchemy>=2.0",
-  "a2a-sdk>=1.1",
+  "a2a-sdk[http-server]>=1.1",
   "mcp>=2.1",
 ]
 dev = [
