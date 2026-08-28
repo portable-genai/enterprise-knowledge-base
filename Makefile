@@ -69,7 +69,13 @@ portability-demo: ## Run the bounded executable portability proof.
 ui-check: ## Build, execute and audit the production UI artifact.
 	cd $(UI_DIR) && npm ci && npm run lint && npm test && NEXT_TELEMETRY_DISABLED=1 npm run build && npm run assert-hydratable && npm audit --audit-level=high
 
-check: lint test eval demo-selftest portability-demo ui-check ## Full offline quality gate.
+plugin: ## Render the Agent Plugins 1.0.0 directory from this repo's own declarations.
+	python scripts/render_plugin.py --dest dist/plugin
+
+mcp-serve: ## Serve the governed tool catalog over MCP 2026-07-28 (stdio; needs [gcp]).
+	python -m enterprise_kb.mcp
+
+check: lint test eval demo-selftest portability-demo ui-check plugin ## Full offline quality gate.
 
 check-api-bind:
 	@case "$(API_HOST)" in \
