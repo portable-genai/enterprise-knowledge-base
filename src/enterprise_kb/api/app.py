@@ -43,6 +43,7 @@ from ..config import Settings, end_user_auth_kind
 from ..domain import models as m
 from ..domain.errors import GuardrailBlockedError, RetrievalEmptyError
 from ..domain.identity import IdentityError
+from ..domain.policy import RetractionPolicy
 from ..domain.services import IngestionService, KnowledgeBaseService
 from ..envread import read_env_setting
 from ..managed_preflight import assert_managed_profile_ready
@@ -408,6 +409,45 @@ def delete_document(
     """
     service.delete(document_id, actor=principal.actor, tenant=principal.tenant)
     return {"document_id": document_id, "status": "deleted"}
+
+
+@app.post(
+    "/v1/documents/{document_id}/retract",
+    tags=["retraction"],
+    dependencies=[ServiceCaller],
+)
+def retract_document(
+    document_id: str,
+    principal: CurrentPrincipal,
+    service: Annotated[IngestionService, Depends(deps.get_ingestion_service)],
+    policy: Annotated[RetractionPolicy, Depends(deps.get_retraction_policy)],
+) -> dict[str, str]:
+    """Withdraw an indexed document from the governed corpus, on ANY profile.
+
+    Deliberately NOT behind :func:`_require_local_write_surface`, and that is why this route
+    exists separately from ``DELETE /v1/documents/{id}``. Bulk corpus writes stay pipeline-only
+    outside the local demo, because a managed serving identity has no business running an
+    ingest. Retraction is the opposite shape: one document, synchronous, audited, and the answer
+    an erasure request needs. Collapsing the two behind one switch meant the platform profile
+    could not withdraw anything at all, so a document filed against the wrong case, an erasure
+    request and a document later found to be forged all got the same non-answer while the system
+    went on citing all three.
+
+    Authorization is a reviewed entitlement on the SERVER-VERIFIED principal, never the request
+    body and never the mere possession of a service credential: ``ServiceCaller`` proves which
+    SERVICE is calling and says nothing about which human is behind it. The delete is scoped to
+    the caller's verified ``tenant``, so naming another tenant's document id retracts nothing.
+    """
+    if not policy.permits(principal.entitlement_principals()):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Retraction requires a reviewed retraction entitlement. Withdrawing evidence is "
+                "entitled separately from reading it, and separately again from ingesting it."
+            ),
+        )
+    service.delete(document_id, actor=principal.actor, tenant=principal.tenant)
+    return {"document_id": document_id, "status": "retracted"}
 
 
 def _blocked_ingest_response(document_id: str, reason: str) -> JSONResponse:

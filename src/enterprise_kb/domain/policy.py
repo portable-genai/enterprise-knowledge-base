@@ -16,6 +16,7 @@ stays framework-free.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -47,6 +48,11 @@ DEFAULT_ANCHOR_MATCH_FLOOR: float = 0.34
 
 #: Reference: an answer with no ACL-admitted passage is a hard error, not a soft answer.
 DEFAULT_EMPTY_RETRIEVAL_RAISES: bool = True
+
+#: Entitlement principals permitted to RETRACT an indexed document (withdraw it from the
+#: governed corpus). Retraction is a write against evidence, so it is entitled separately from
+#: reading and separately from the pipeline ingest path, and it is deliberately narrow.
+DEFAULT_RETRACTION_ENTITLEMENTS: tuple[str, ...] = ("kb-records-office",)
 
 #: Reference: maker-checker is a floor; every synthesised answer is reviewed (P-06).
 DEFAULT_REVIEW_ALL_ANSWERS: bool = True
@@ -96,6 +102,37 @@ class CitationPolicy:
 
 
 @dataclass(frozen=True, slots=True)
+class RetractionPolicy:
+    """Who may withdraw an indexed document from the governed corpus.
+
+    Retraction is the one write a serving identity may perform, because an erasure request, a
+    document filed against the wrong case and a document later found to be forged all need a
+    synchronous, audited, per-document answer. Bulk corpus writes stay on the reviewed pipeline
+    path; this is not that, and the two must not share one switch.
+
+    Args:
+        entitlements: the entitlement principals permitted to retract. Empty means NOBODY,
+            which is the whole point of the three-state read in
+            :meth:`KbPolicy.from_mapping`: an operator who empties this list has disabled
+            retraction deliberately, and must not silently inherit the shipped group.
+    """
+
+    entitlements: tuple[str, ...] = field(default_factory=lambda: DEFAULT_RETRACTION_ENTITLEMENTS)
+
+    def permits(self, principals: Iterable[str]) -> bool:
+        """True when the SERVER-VERIFIED principals carry a retraction entitlement.
+
+        Fail-closed by construction: an empty principal tuple, an unentitled one, and a
+        configured-empty allowlist all return False. Blank identifiers never match, so a
+        whitespace entitlement in config cannot be satisfied by a whitespace group claim.
+        """
+        allowed = {e.strip() for e in self.entitlements if e and e.strip()}
+        if not allowed:
+            return False
+        return any(p and p.strip() in allowed for p in principals)
+
+
+@dataclass(frozen=True, slots=True)
 class KbPolicy:
     """The full set of bank-owned numbers, parsed once from ``settings.policy``."""
 
@@ -106,6 +143,9 @@ class KbPolicy:
     empty_retrieval_raises: bool = DEFAULT_EMPTY_RETRIEVAL_RAISES
     review_all_answers: bool = DEFAULT_REVIEW_ALL_ANSWERS
     anchor_match_floor: float = DEFAULT_ANCHOR_MATCH_FLOOR
+    retraction_entitlements: tuple[str, ...] = field(
+        default_factory=lambda: DEFAULT_RETRACTION_ENTITLEMENTS
+    )
 
     # -- parsing ----------------------------------------------------------- #
     @staticmethod
@@ -131,6 +171,19 @@ class KbPolicy:
         corpus = raw.get("corpus") or {}
         answer = raw.get("answer") or {}
         citation = raw.get("citation") or {}
+        # Three states, and the middle one is why this is not `or {}` like the rest:
+        # an ABSENT section takes the reference group, a section carrying an EMPTY
+        # list refuses everyone, and only a populated list widens beyond neither.
+        retraction = raw.get("retraction")
+        if isinstance(retraction, dict) and "entitlements" in retraction:
+            configured = retraction.get("entitlements")
+            entitlements = (
+                tuple(str(e) for e in configured if str(e).strip())
+                if isinstance(configured, list | tuple)
+                else DEFAULT_RETRACTION_ENTITLEMENTS
+            )
+        else:
+            entitlements = DEFAULT_RETRACTION_ENTITLEMENTS
 
         tags = review.get("sensitive_tags")
         sensitive = (
@@ -164,9 +217,13 @@ class KbPolicy:
                 review.get("review_all_answers"), DEFAULT_REVIEW_ALL_ANSWERS
             ),
             anchor_match_floor=max(0.0, min(1.0, anchor_floor)),
+            retraction_entitlements=entitlements,
         )
 
     # -- engine constructors ----------------------------------------------- #
+    def retraction_policy(self) -> RetractionPolicy:
+        return RetractionPolicy(entitlements=self.retraction_entitlements)
+
     def citation_policy(self) -> CitationPolicy:
         return CitationPolicy(anchor_match_floor=self.anchor_match_floor)
 

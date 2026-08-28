@@ -18,6 +18,7 @@ from functools import lru_cache
 from ..config import Container, Settings, build_container
 from ..domain.freshness_policy import FreshnessPolicy
 from ..domain.hitl import KbReviewPolicy
+from ..domain.policy import RetractionPolicy
 from ..domain.services import IngestionService, KnowledgeBaseService
 
 
@@ -46,6 +47,15 @@ def get_kb_service() -> KnowledgeBaseService:
 def get_ingestion_service() -> IngestionService:
     """IngestionService(ingestion, redaction, guardrail, ledger, tracer, audit)."""
     return build_ingestion_service(get_container())
+
+
+def get_retraction_policy() -> RetractionPolicy:
+    """Who may withdraw an indexed document, from the bank-owned ``policy:`` section.
+
+    Its own factory rather than a read inside the route, so the route has one place to be
+    overridden in a test and the entitlement is never re-derived at a call site.
+    """
+    return get_container().settings.policy.retraction_policy()
 
 
 def build_kb_service(container: Container) -> KnowledgeBaseService:
