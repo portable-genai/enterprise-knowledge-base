@@ -8,7 +8,7 @@ This adapter implements :class:`GuardrailPort` by POSTing to that gateway's
 :class:`GuardrailVerdict` (SPEC §6, A1 contract).
 
 The adapter follows the construction convention ``__init__(self, settings)`` and reads
-its base URL from ``HRZ_GUARDRAIL_URL`` (sensible localhost default), so nothing GCP-
+its base URL from ``GUARDRAIL_GATEWAY_URL`` (sensible localhost default), so nothing GCP-
 specific is required to construct or exercise it.
 """
 
@@ -43,7 +43,7 @@ class RemoteGuardrailAdapter:
         # so the same image runs against any platform deployment without code changes.
         self._settings = settings
         self._base_url = _s2s.validate_base_url(
-            setting_or_default("HRZ_GUARDRAIL_URL", _DEFAULT_URL), service="guardrail gateway"
+            setting_or_default("GUARDRAIL_GATEWAY_URL", _DEFAULT_URL), service="guardrail gateway"
         )
 
     def screen(self, text: str, direction: Direction) -> GuardrailVerdict:

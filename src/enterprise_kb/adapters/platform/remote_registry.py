@@ -10,7 +10,7 @@ or retaining this portable adapter is not evidence that registration occurs. It 
 * ``get``      → ``GET  /v1/agents/{name}`` (``200`` → card, ``404`` → ``None``)
 * ``list``     → ``GET  /v1/agents`` (``200`` → ``[card, ...]``)
 
-The base URL is read from ``HRZ_REGISTRY_URL`` with a localhost default when an adopter
+The base URL is read from ``AGENT_REGISTRY_URL`` with a localhost default when an adopter
 explicitly selects the future platform profile.
 """
 
@@ -38,7 +38,7 @@ class RemoteRegistryAdapter:
     def __init__(self, settings: object) -> None:
         self._settings = settings
         self._base_url = _s2s.validate_base_url(
-            setting_or_default("HRZ_REGISTRY_URL", _DEFAULT_URL), service="agent registry"
+            setting_or_default("AGENT_REGISTRY_URL", _DEFAULT_URL), service="agent registry"
         )
 
     def register(self, card: AgentCard) -> None:

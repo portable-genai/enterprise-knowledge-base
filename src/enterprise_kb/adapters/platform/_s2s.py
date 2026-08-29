@@ -6,9 +6,9 @@ horizontal-platform services. Two controls apply to every call:
 * **Transport**: base URLs must be ``https://`` except for loopback development hosts
   (``localhost`` / ``127.0.0.1`` / ``::1``). A plaintext URL to a real host is a
   configuration error caught at adapter construction, not a silent downgrade.
-* **Service identity**: when ``HRZ_S2S_TOKEN`` is set, every request carries it as an
+* **Service identity**: when ``S2S_TOKEN`` is set, every request carries it as an
   ``Authorization: Bearer`` header (a Cloud Run ID token, an OIDC service-account JWT,
-  or an API gateway key, per deployment). When ``HRZ_S2S_SIGNING_KEY`` is set, a verified
+  or an API gateway key, per deployment). When ``S2S_SIGNING_KEY`` is set, a verified
   end-user actor can be propagated as an HMAC-signed ``X-Kb-Actor`` / ``X-Kb-Actor-Sig``
   header pair so the receiving service can authenticate the asserted user context. Both
   names resolve in THREE states, in the commons: UNSET is the offline zero-secret posture,
@@ -27,9 +27,9 @@ from hex_service_kit.s2s import client_headers, validate_base_url
 
 #: Env var holding the bearer credential for S2S calls. UNSET attaches no header (the offline
 #: zero-secret posture); SET-AND-EMPTY raises rather than being read as unset.
-TOKEN_ENV = "HRZ_S2S_TOKEN"
+TOKEN_ENV = "S2S_TOKEN"
 #: Env var holding the HMAC key for signing the propagated end-user actor. Same three states.
-SIGNING_KEY_ENV = "HRZ_S2S_SIGNING_KEY"
+SIGNING_KEY_ENV = "S2S_SIGNING_KEY"
 #: This repo's header names for the signed-actor pair (kept stable for the receiving side).
 _ACTOR_HEADER = "X-Kb-Actor"
 _ACTOR_SIG_HEADER = "X-Kb-Actor-Sig"

@@ -70,10 +70,10 @@ CONFIG_PATH = "config/settings.yaml"
 # The platform clients' base URLs, resolved with the SAME defaults the remote_* adapters
 # hard-code, so the respx routes target whatever the adapter will actually call (robust even
 # if an ambient env var is set). These MUST match the ``_DEFAULT_URL`` in each remote_* module.
-HRZ_GUARDRAIL = os.environ.get(
-    "HRZ_GUARDRAIL_URL", "http://localhost:8080"
+GUARDRAIL_GATEWAY = os.environ.get(
+    "GUARDRAIL_GATEWAY_URL", "http://localhost:8080"
 )  # remote_guardrail/redaction
-HRZ_OBSERVABILITY = os.environ.get("HRZ_OBSERVABILITY_URL", "http://localhost:8085")  # remote_audit
+OBSERVABILITY = os.environ.get("OBSERVABILITY_URL", "http://localhost:8085")  # remote_audit
 
 # Obviously-fictional inputs.
 RETAIL_PRINCIPAL = "user:jane@bank.test"  # seeded persona -> {dept:retail, classification:internal}
@@ -137,7 +137,7 @@ def test_guardrail_parity_same_verdict_local_and_platform(text: str, should_allo
     with respx.mock:
         # The Hrz1 gateway (Model Armor + DLP) serves its documented /v1/guardrail/screen
         # answer for the same request: allow benign, block prompt-injection with a finding.
-        respx.post(f"{HRZ_GUARDRAIL}/v1/guardrail/screen").respond(
+        respx.post(f"{GUARDRAIL_GATEWAY}/v1/guardrail/screen").respond(
             200,
             json={
                 "allowed": should_allow,
@@ -179,7 +179,7 @@ def test_redaction_parity_same_request_local_and_platform():
     with respx.mock:
         # The Hrz1 gateway is DLP-backed; serve its documented /v1/redact answer for the same
         # request (DLP-style info-type masks), matching what the local regex adapter removed.
-        respx.post(f"{HRZ_GUARDRAIL}/v1/redact").respond(
+        respx.post(f"{GUARDRAIL_GATEWAY}/v1/redact").respond(
             200,
             json={
                 "text": (
@@ -234,7 +234,7 @@ def test_audit_parity_identical_payload_at_every_sink():
 
     # platform sink (Hrz5 observability): the POSTed body is byte-identical to what local stored.
     with respx.mock:
-        route = respx.post(f"{HRZ_OBSERVABILITY}/v1/audit").respond(202)
+        route = respx.post(f"{OBSERVABILITY}/v1/audit").respond(202)
         _adapter("audit", "platform").record(event)
         posted = json.loads(route.calls.last.request.content)
     assert posted == expected, "platform sink received a different record than local stored"
