@@ -45,7 +45,7 @@ export default function Home() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">A2 Enterprise Knowledge Base</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Enterprise Knowledge Base</h1>
         <p className="mt-1 text-sm text-slate-600">
           ACL-aware governed RAG over the bank corpus. Every passage is access-filtered to
           the caller&rsquo;s principals and cited to its source page; grounded answers never
