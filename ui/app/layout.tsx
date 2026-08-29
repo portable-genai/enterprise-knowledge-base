@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "A2 Enterprise Knowledge Base",
+  title: "Enterprise Knowledge Base",
   description:
     "ACL-aware governed RAG over the bank corpus: cited, access-filtered passages and grounded answers.",
 };
