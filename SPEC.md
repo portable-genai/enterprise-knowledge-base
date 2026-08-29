@@ -11,7 +11,7 @@ serves **ACL-filtered, cited** passages and (optionally) a grounded synthesized 
 is a horizontal platform service, not a vertical app.
 
 Catalog identity: **Hrz2**, group `hrz` (Horizon control plane), priority **P0**, buyer
-Data / Knowledge Engineering. Service port default **8082** (`HRZ_KB_URL`).
+Data / Knowledge Engineering. Service port default **8082** (`KNOWLEDGE_BASE_URL`).
 
 ## 2. Locked decisions
 
@@ -239,10 +239,10 @@ inherits neither local relaxation.
 
 ### Services Hrz2 consumes (R1, R2, R4)
 
-- **Hrz1 guardrail** (`HRZ_GUARDRAIL_URL` default `:8080`): `POST /v1/guardrail/screen`,
+- **Hrz1 guardrail** (`GUARDRAIL_GATEWAY_URL` default `:8080`): `POST /v1/guardrail/screen`,
   `POST /v1/redact`.
-- **Hrz3 registry** (`HRZ_REGISTRY_URL` default `:8083`): `POST /v1/agents`, `GET /v1/agents`.
-- **Hrz5 observability/audit** (`HRZ_OBSERVABILITY_URL` default `:8085`): `POST /v1/audit`.
+- **Hrz3 registry** (`AGENT_REGISTRY_URL` default `:8083`): `POST /v1/agents`, `GET /v1/agents`.
+- **Hrz5 observability/audit** (`OBSERVABILITY_URL` default `:8085`): `POST /v1/audit`.
 
 ## 6b. Bank-owned policy numbers (the `policy:` section)
 

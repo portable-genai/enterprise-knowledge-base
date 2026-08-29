@@ -8,7 +8,7 @@ the response back into the domain :class:`RedactionResult` (SPEC §6, A1 contrac
 
 A2 ingests bank documents that may carry PII, so redaction runs at both the ingest and
 the serve boundary (R1, P-04). The adapter follows the construction convention
-``__init__(self, settings)`` and reads its base URL from ``HRZ_GUARDRAIL_URL`` (sensible
+``__init__(self, settings)`` and reads its base URL from ``GUARDRAIL_GATEWAY_URL`` (sensible
 localhost default), so nothing GCP-specific is required to construct or exercise it.
 """
 
@@ -35,7 +35,7 @@ class RemoteRedactionAdapter:
     def __init__(self, settings: object) -> None:
         self._settings = settings
         self._base_url = _s2s.validate_base_url(
-            setting_or_default("HRZ_GUARDRAIL_URL", _DEFAULT_URL), service="redaction gateway"
+            setting_or_default("GUARDRAIL_GATEWAY_URL", _DEFAULT_URL), service="redaction gateway"
         )
 
     def redact(self, text: str) -> RedactionResult:

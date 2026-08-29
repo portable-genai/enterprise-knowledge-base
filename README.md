@@ -13,7 +13,7 @@ Built ports-and-adapters on the **Gemini Enterprise Agent Platform** (region
 one-line profile change, and a fully WORKING `local` profile runs the entire pipeline
 offline with **no Google Cloud SDK, no API key, and no emulator**.
 
-- Package: `enterprise_kb` · CLI: `enterprise-knowledge-base` · service port `8082` (`HRZ_KB_URL`)
+- Package: `enterprise_kb` · CLI: `enterprise-knowledge-base` · service port `8082` (`KNOWLEDGE_BASE_URL`)
 - Profiles: `gcp` (managed) · `local` (WORKING offline laptop stack, the dev / test
   default) · `platform` (remote clients to Hrz1/Hrz3/Hrz5) · `onprem` (fail-fast SDK-free
   placeholders)
