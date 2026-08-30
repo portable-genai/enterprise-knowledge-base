@@ -151,14 +151,20 @@ export KB_PROFILE=local
 # Auto-cleared, cited answer for the retail RM:
 enterprise-knowledge-base answer \
   "What due diligence is required before onboarding a cloud provider?" \
-  --principals "user:jane@bank.test"
+  --principals "user:jane@bank.test" --tenant "demo-bank"
 
 # The risk officer hits the human-review gate on a restricted source:
-enterprise-knowledge-base answer "Where must records classified restricted be stored?" -p "group:kb-approver"
+enterprise-knowledge-base answer "Where must records classified restricted be stored?" \
+  -p "group:kb-approver" --tenant "demo-bank"
 
 # An unentitled principal is fail-closed at the domain ACL seam:
-enterprise-knowledge-base search "cloud onboarding due diligence" -p "user:nobody@bank.test"
+enterprise-knowledge-base search "cloud onboarding due diligence" \
+  -p "user:nobody@bank.test" --tenant "demo-bank"
 ```
+
+Every command names `--tenant`. Omitting it is not a wildcard: an unnamed tenant reads the
+shared corpus and nothing else, so a run without it would show the ACL seam over the wrong
+evidence and read as a weaker demo than it is.
 
 ---
 

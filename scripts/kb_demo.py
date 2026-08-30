@@ -48,20 +48,30 @@ from enterprise_kb.domain.serialization import to_jsonable  # noqa: E402
 ACTOR = "rm.tan@bank.test"
 
 # (id, label, principals, query, want_answer)
+# Every persona names its tenant. An omitted tenant reads the SHARED corpus and nothing else
+# (fail-closed, 2026-08-30), so the demo has to say which partition each caller is in rather
+# than reading across all of them by leaving the field out. All three are demo-bank callers,
+# matching the seeded persona registry: "unknown" is unentitled by ACL, not by tenant, which
+# is the distinction the middle and last rows exist to show.
+DEMO_TENANT = "demo-bank"
+
 PERSONAS = {
     "retail": {
         "label": "Retail RM (user:jane@bank.test) : dept:retail + classification:internal",
         "principals": ("user:jane@bank.test",),
+        "tenant": DEMO_TENANT,
         "query": "What due diligence is required before onboarding a cloud provider?",
     },
     "risk": {
         "label": "Risk approver (group:kb-approver) : holds dept:risk + classification:restricted",
         "principals": ("group:kb-approver",),
+        "tenant": DEMO_TENANT,
         "query": "Where must records classified restricted be stored?",
     },
     "unknown": {
         "label": "Unentitled principal (user:nobody@bank.test) : resolves to no ACL tags",
         "principals": ("user:nobody@bank.test",),
+        "tenant": DEMO_TENANT,
         "query": "What due diligence is required before onboarding a cloud provider?",
     },
 }
@@ -138,13 +148,16 @@ def _run(settings: Settings) -> dict:
 
     for key, spec in PERSONAS.items():
         principals = spec["principals"]
+        tenant = spec["tenant"]
         query = spec["query"]
-        passages = kb.search(query, actor=ACTOR, acl_principals=principals)
+        passages = kb.search(query, actor=ACTOR, acl_principals=principals, tenant=tenant)
         # B2: an unentitled caller grounds nothing, so the service REFUSES rather than
         # returning an uncited answer. The demo shows the refusal as the governed
         # outcome it is; the ESCALATED audit record is already written by the domain.
         try:
-            answer_view = to_jsonable(kb.answer(query, actor=ACTOR, acl_principals=principals))
+            answer_view = to_jsonable(
+                kb.answer(query, actor=ACTOR, acl_principals=principals, tenant=tenant)
+            )
             answer_view["refused"] = False
         except RetrievalEmptyError as exc:
             answer_view = {

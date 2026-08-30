@@ -49,7 +49,7 @@ test: ## Run unit + contract tests on the local profile (no GCP SDK required).
 smoke: ## End-to-end offline smoke: answer a seeded query under the local profile.
 	KB_PROFILE=local enterprise-knowledge-base answer \
 		"What due diligence is required before onboarding a cloud provider?" \
-		--principals "user:jane@bank.test"
+		--principals "user:jane@bank.test" --tenant "demo-bank"
 
 eval: ## Run the A4-style eval gate (recall / ACL correctness / citation / safety).
 	$(PYTHON) eval/run_eval.py
