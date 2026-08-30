@@ -86,14 +86,22 @@ def filter_by_tenant(
     """Drop passages outside the caller's tenant partition (multi-tenant isolation).
 
     A passage whose ``tenant`` equals the caller's is admissible; a passage with an empty
-    ``tenant`` is shared/global content, visible to every tenant. When the caller has no
-    tenant (``""`` : trusted local tooling such as the offline CLI, the eval gate, or the
-    local agent runtime), no partition is applied. In secure/multi-tenant deployments the
-    caller's tenant always comes from the server-verified :class:`Principal`, so a caller
-    can never read another tenant's corpus by asserting a different tenant.
+    ``tenant`` is shared/global content, visible to every tenant. **A caller with no tenant
+    (``""``) is therefore admitted to the shared corpus and to nothing else**, which is the
+    fail-closed direction the rest of the fleet already reads an empty tenant in.
+
+    It used to be the opposite here: an empty tenant returned every passage unpartitioned,
+    on the reading that only trusted local tooling ever arrives without one. That made the
+    absence of a value a grant of the widest possible read, so any future path that resolved
+    a tenant to ``""`` would have widened silently rather than refused. The org decision of
+    2026-08-30 closed it by deleting the exemption, not by guarding its callers: the MCP
+    server (``mcp/server.py``) asserts no tenant precisely because its transport verifies no
+    end user, and its own contract already says such a caller reads the public corpus.
+
+    In secure/multi-tenant deployments the caller's tenant always comes from the
+    server-verified :class:`Principal`, so a caller can never read another tenant's corpus by
+    asserting a different tenant.
     """
-    if not tenant:
-        return list(passages)
     return [p for p in passages if p.tenant in ("", tenant)]
 
 

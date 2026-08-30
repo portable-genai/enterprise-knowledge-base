@@ -167,10 +167,11 @@ KB_ALLOW_INSECURE_DEMO=1 make run-api API_HOST=0.0.0.0
 # Grounded, ACL-filtered, page-cited answer over the seeded corpus:
 enterprise-knowledge-base answer \
   "What due diligence is required before onboarding a cloud provider?" \
-  --principals "user:jane@bank.test"
+  --principals "user:jane@bank.test" --tenant "demo-bank"
 
 # ACL-scoped passages:
-enterprise-knowledge-base search "cloud onboarding due diligence" --principals "user:jane@bank.test"
+enterprise-knowledge-base search "cloud onboarding due diligence" \
+  --principals "user:jane@bank.test" --tenant "demo-bank"
 ```
 
 Seed your own document into the same offline FTS5 index, then retrieve it (PII is redacted
@@ -180,11 +181,16 @@ before indexing):
 printf 'Vendor offboarding standard. Terminate access within 24 hours.' > /tmp/doc.txt
 enterprise-knowledge-base ingest standard-offboarding-v1 "Vendor Offboarding Standard" /tmp/doc.txt \
   --tags "dept:retail,classification:internal" --mime text/plain
-enterprise-knowledge-base search "vendor offboarding terminate access" --principals "user:jane@bank.test"
+enterprise-knowledge-base search "vendor offboarding terminate access" \
+  --principals "user:jane@bank.test" --tenant "demo-bank"
 ```
 
 Seeded principals: `user:jane@bank.test` (retail + internal), `group:risk` (risk + internal
 + restricted). An unknown principal resolves to no tags and sees nothing (fail-closed).
+
+`--tenant` is a second, independent partition and it fails closed the same way: an unnamed
+tenant reads the shared corpus and nothing else, so the seeded `demo-bank` documents need it
+named. It is not a wildcard, and it has not been one since 2026-08-30.
 
 Optional: higher-fidelity local runs route to Google's official emulators when the standard
 `FIRESTORE_EMULATOR_HOST` / `PUBSUB_EMULATOR_HOST` / `STORAGE_EMULATOR_HOST` env vars are
@@ -218,10 +224,11 @@ enterprise-knowledge-base serve   # FastAPI on :8082
 
 ```bash
 # Search (ACL-scoped passages):
-enterprise-knowledge-base search "cloud onboarding due diligence" -p "group:risk"
+enterprise-knowledge-base search "cloud onboarding due diligence" -p "group:risk" --tenant "demo-bank"
 
 # Grounded answer:
-enterprise-knowledge-base answer "Where must restricted records be stored?" -p "group:risk"
+enterprise-knowledge-base answer "Where must restricted records be stored?" -p "group:risk" \
+  --tenant "demo-bank"
 
 # Ingest a document with ACL tags:
 enterprise-knowledge-base ingest policy-x "Policy X" ./policy-x.pdf -t "dept:retail,classification:internal"

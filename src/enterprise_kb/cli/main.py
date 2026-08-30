@@ -190,13 +190,30 @@ def search(
     principals: str | None = typer.Option(
         None, "--principals", "-p", help="Comma-separated caller principal ids to scope access to."
     ),
+    tenant: str = typer.Option(
+        # No short flag: ``-t`` is already ``--tags`` on ``ingest``, and one letter meaning
+        # two things across sibling commands is how an operator reads a partition wrong.
+        "",
+        "--tenant",
+        help="Tenant partition to read. Omitted reads the shared corpus only (fail-closed).",
+    ),
     top_k: int = typer.Option(10, "--top-k", "-k", help="Maximum passages to return."),
 ) -> None:
     """Return ACL-filtered, page-cited passages for a query."""
+    # An empty --tenant is a REFUSAL to guess, not a wildcard: the domain admits the shared
+    # corpus for an unnamed tenant and nothing else. An operator who wants a tenant's own
+    # documents names it. Before 2026-08-30 the empty value read across every partition,
+    # which made the option's absence the widest possible read.
 
     def _do() -> list[RetrievedPassage]:
         svc = _deps().build_kb_service(_container())
-        return svc.search(query, actor=_CLI_ACTOR, acl_principals=_csv(principals), top_k=top_k)
+        return svc.search(
+            query,
+            actor=_CLI_ACTOR,
+            acl_principals=_csv(principals),
+            tenant=tenant,
+            top_k=top_k,
+        )
 
     _print_passages(_run("search", _do))
 
@@ -207,12 +224,25 @@ def answer(
     principals: str | None = typer.Option(
         None, "--principals", "-p", help="Comma-separated caller principal ids to scope access to."
     ),
+    tenant: str = typer.Option(
+        # No short flag: ``-t`` is already ``--tags`` on ``ingest``, and one letter meaning
+        # two things across sibling commands is how an operator reads a partition wrong.
+        "",
+        "--tenant",
+        help="Tenant partition to read. Omitted reads the shared corpus only (fail-closed).",
+    ),
 ) -> None:
     """Synthesise a cited, ACL-grounded answer over the caller's permitted passages."""
+    # --tenant behaves exactly as it does for `search`: see the comment there.
 
     def _do() -> GroundedAnswer:
         svc = _deps().build_kb_service(_container())
-        return svc.answer(query, actor=_CLI_ACTOR, acl_principals=_csv(principals))
+        return svc.answer(
+            query,
+            actor=_CLI_ACTOR,
+            acl_principals=_csv(principals),
+            tenant=tenant,
+        )
 
     _print_answer(_run("answer", _do))
 

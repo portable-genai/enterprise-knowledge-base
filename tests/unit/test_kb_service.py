@@ -248,10 +248,15 @@ def test_tenant_document_shadows_same_id_global_without_cross_owner_citation(
     )
 
     tenant_passages = service.search("policy", actor=ACTOR, acl_principals=("p",), tenant="bank-a")
-    unpartitioned_passages = service.search("policy", actor=ACTOR, acl_principals=("p",))
+    tenantless_passages = service.search("policy", actor=ACTOR, acl_principals=("p",))
 
     assert [(p.text, p.tenant) for p in tenant_passages] == [("bank-a policy", "bank-a")]
-    assert unpartitioned_passages == []
+    # A caller with no tenant reads the SHARED owner of the ambiguous id and no other, because
+    # the partition now runs before the ambiguity check and leaves exactly one owner standing.
+    # It used to read nothing here, and for the wrong reason: the partition admitted BOTH
+    # owners, and the ambiguity check then dropped both. That the two answers differ only in
+    # this one case is why the fail-open survived so long — the visible outcome was the same.
+    assert [(p.text, p.tenant) for p in tenantless_passages] == [("shared policy", "")]
 
 
 def test_untagged_passage_is_dropped_fail_closed(

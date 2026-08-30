@@ -77,6 +77,10 @@ OBSERVABILITY = os.environ.get("OBSERVABILITY_URL", "http://localhost:8085")  # 
 
 # Obviously-fictional inputs.
 RETAIL_PRINCIPAL = "user:jane@bank.test"  # seeded persona -> {dept:retail, classification:internal}
+# The persona's tenant, named rather than omitted. An omitted tenant reads the SHARED corpus
+# and nothing else (fail-closed, 2026-08-30), so a caller that wants a tenant's own documents
+# has to say which tenant : this test ingests into "demo-bank" and must read it back.
+RETAIL_TENANT = "demo-bank"
 SAMPLE_QUERY = "What due diligence is required before onboarding a cloud provider?"
 PII_TEXT = (
     "Contact officer Tan Mei Ling (FICTIONAL), NRIC S1234567A, email mei.ling@example.test, "
@@ -275,7 +279,10 @@ def test_full_pipeline_local_works_onprem_fails_fast():
     assert ingest_result.chunks >= 1, "the ingest must index at least one page passage"
 
     answer = build_kb_service(local_container).answer(
-        SAMPLE_QUERY, actor="parity@test", acl_principals=(RETAIL_PRINCIPAL,)
+        SAMPLE_QUERY,
+        actor="parity@test",
+        acl_principals=(RETAIL_PRINCIPAL,),
+        tenant=RETAIL_TENANT,
     )
     assert isinstance(answer, GroundedAnswer)
     assert answer.answer, "the offline generative answer must not be empty"
@@ -290,7 +297,10 @@ def test_full_pipeline_local_works_onprem_fails_fast():
         )
     with pytest.raises(NotImplementedError):
         build_kb_service(onprem_container).answer(
-            SAMPLE_QUERY, actor="parity@test", acl_principals=(RETAIL_PRINCIPAL,)
+            SAMPLE_QUERY,
+            actor="parity@test",
+            acl_principals=(RETAIL_PRINCIPAL,),
+            tenant=RETAIL_TENANT,
         )
 
 

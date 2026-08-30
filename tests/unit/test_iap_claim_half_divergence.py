@@ -3,19 +3,26 @@
 Every other user-facing repository in this fleet now ends `resolve()` with one
 :func:`hex_service_kit.federation.principal_from_iap_claims` call. This one does not, and the
 reason is not that nobody got to it. Adoption EXECUTED the commons against this adapter over
-the same claim sets and the two disagreed on every row, in three separate ways, and one of
-them runs the wrong direction.
+the same claim sets and the two disagreed on every row, in three separate ways. One of the
+three ran the wrong direction and has since been fixed on this side; two still stand, and two
+is enough.
 
-**1. An empty tenant means the OPPOSITE thing here.** :func:`domain._grounded.filter_by_tenant`
-applies no partition at all when the caller's tenant is empty: that is the trusted-tooling
-path, the offline CLI and the eval gate, and it sees every tenant's passages. Everywhere else
-in the fleet an empty tenant is the fail-closed answer. So the commons resolving "no reviewed
-tenant" to `""` would not fail closed here, it would fail OPEN: a verified IAP user carrying no
-``hd`` (a personal account the edge admits, an external federated identity) would go from a
-partition of their own mail domain to no partition at all. That is the one substitution this
-module must never make silently, and it is why the local tail keeps its mail-domain fallback
-even though the commons deliberately removed the same fallback from ``FederationPolicy``. The
-two are right about different deployments.
+**1. An empty tenant used to mean the OPPOSITE thing here. CLOSED 2026-08-30, on this side.**
+:func:`domain._grounded.filter_by_tenant` applied no partition at all when the caller's tenant
+was empty: the trusted-tooling reading, and it saw every tenant's passages. Everywhere else in
+the fleet an empty tenant is the fail-closed answer, so the commons resolving "no reviewed
+tenant" to `""` would not have failed closed here, it would have failed OPEN: a verified IAP
+user carrying no ``hd`` (a personal account the edge admits, an external federated identity)
+would have gone from a partition of their own mail domain to no partition at all.
+
+The org decision of 2026-08-30 fixed the direction rather than the callers: an empty tenant now
+reads the shared corpus and nothing else, which is what the fleet means by fail-closed and what
+``mcp/server.py`` already claimed in writing that its tenant-less callers get. **So this row no
+longer excludes the commons** — the substitution would now be a narrowing, and a safe one. It
+is kept, inverted, because the row it replaced is the reason anyone would look, and because the
+local tail's mail-domain fallback is now a product preference about personal accounts rather
+than the safety property it was standing in for. Rows (2) and (3) are what the exclusion rests
+on.
 
 **2. The audit subject is the opaque ``sub``, not the email.** IAP's stable subject is what
 this repository attributes an action to, precisely so a user's address is never copied into a
@@ -92,19 +99,34 @@ def _commons(claims: dict[str, Any]) -> Any:
 # (1) The direction of an empty tenant, which is what makes this an exclusion rather than a
 #     preference.
 # --------------------------------------------------------------------------------------- #
-def test_an_empty_tenant_removes_the_partition_here_rather_than_closing_it() -> None:
-    """The premise the other two rows rest on, asserted rather than assumed."""
+def test_an_empty_tenant_now_closes_the_partition_here_like_everywhere_else() -> None:
+    """The row that CLOSED, asserted rather than remembered.
+
+    This used to read ``filter_by_tenant(passages, "") == passages`` and was the premise the
+    other two rows rested on. The org decision of 2026-08-30 deleted the exemption, so an
+    empty tenant is now the fail-closed answer here too: the shared corpus, and nothing else.
+    """
     citation = Citation(document_id="doc-1", title="Retention standard", uri="kb://doc-1", page=1)
-    passages = [RetrievedPassage(text="x", citation=citation, tenant="other-bank")]
-    assert filter_by_tenant(passages, "") == passages
-    assert filter_by_tenant(passages, "reference-bank") == []
+    shared = RetrievedPassage(text="s", citation=citation, tenant="")
+    owned = RetrievedPassage(
+        text="x",
+        citation=Citation(document_id="doc-2", title="Other", uri="kb://doc-2", page=1),
+        tenant="other-bank",
+    )
+    assert filter_by_tenant([shared, owned], "") == [shared]
+    assert filter_by_tenant([shared, owned], "reference-bank") == [shared]
+    assert filter_by_tenant([owned], "reference-bank") == []
 
 
 def test_a_verified_user_with_no_hosted_domain_keeps_a_partition_here() -> None:
-    """The commons answers ``""``; here that would be "see every tenant", so the tail differs.
+    """The commons answers ``""``; the tail answers the mail domain. Both fail closed now.
 
-    This is the row that would have been a widening, not a narrowing, and no offline gate
-    elsewhere would have caught it: the local profile never constructs this adapter.
+    Before the 2026-08-30 fix this was the dangerous row: ``""`` meant "see every tenant"
+    here, so substituting the commons would have been a WIDENING that no offline gate
+    elsewhere would have caught, because the local profile never constructs this adapter.
+    It is a narrowing now — the commons answer would admit the shared corpus only — so this
+    row is a preference about how much a personal-account user should see, and no longer the
+    reason the exclusion exists. Rows (2) and (3) are.
     """
     claims = _claims(hd=None, email="someone@personal.test")
     assert _resolved(claims).tenant == "personal.test"
