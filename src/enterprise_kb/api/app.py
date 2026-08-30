@@ -511,7 +511,13 @@ def healthz() -> HealthResponse:
     the local demo-persona picker (only when ``profile == 'local'``).
     """
     settings = deps.get_settings()
-    return HealthResponse(status="ok", profile=settings.profile, region=settings.region)
+    return HealthResponse(
+        status="ok",
+        profile=settings.profile,
+        runtime=settings.runtime,
+        generator_model=settings.generator_model,
+        region=settings.region,
+    )
 
 
 @app.get("/v1/personas", tags=["ops"])
