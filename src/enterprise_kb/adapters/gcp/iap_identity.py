@@ -194,11 +194,15 @@ class IapIdentityAdapter:
             raise IapVerifierUnavailableError(_VERIFIER_UNAVAILABLE) from exc
 
         try:
-            claims: dict[str, Any] = id_token.verify_token(
-                assertion,
-                google_requests.Request(),
-                audience=self._audience,
-                certs_url=_IAP_KEYS_URL,
+            # verify_token returns a Mapping; copy it into a dict so callers own a
+            # mutable snapshot of the claims rather than the SDK's view of them.
+            claims: dict[str, Any] = dict(
+                id_token.verify_token(
+                    assertion,
+                    google_requests.Request(),
+                    audience=self._audience,
+                    certs_url=_IAP_KEYS_URL,
+                )
             )
         except Exception as exc:  # noqa: BLE001 - any verification failure must become a 401
             raise IdentityError(f"IAP assertion verification failed: {exc}") from exc
