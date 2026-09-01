@@ -28,9 +28,13 @@ wholesale by an on-prem equivalent without touching the domain.
 
 ## Two-phase managed demo release
 
-Use `.github/workflows/managed-demo-release.yaml`; do not bootstrap a managed demo by running a
-`gcp` process on localhost. The workflow has two protected environment boundaries and never stores
-a service-account key or database password.
+Follow the two-phase procedure in [`../../docs/runbook.md`](../../docs/runbook.md); do not
+bootstrap a managed demo by running a `gcp` process on localhost. The procedure keeps two
+approval boundaries and never stores a service-account key or database password. It used to be
+carried by a GitHub Actions workflow, which never ran because Actions are disabled
+organization-wide; the boundaries are now enforced by the operator following the runbook, not by
+a protected environment, so treat the approval gates as a manual control until a Cloud Build
+release trigger replaces them.
 
 Foundation prerequisites, created outside this stack:
 

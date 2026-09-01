@@ -104,15 +104,12 @@ def test_terraform_has_distinct_iam_db_users_and_no_database_secret_in_state() -
 def test_fresh_cluster_has_passwordless_bootstrap_and_audited_migration_path() -> None:
     bootstrap = (ROOT / "infra/sql/000_bootstrap_database.sql").read_text(encoding="utf-8")
     runner = (ROOT / "scripts/apply_managed_schema.sh").read_text(encoding="utf-8")
-    workflow = (ROOT / ".github/workflows/schema-migration.yaml").read_text(encoding="utf-8")
     assert "CREATE ROLE %I NOLOGIN" in bootstrap
     assert "CREATE DATABASE %I OWNER %I" in bootstrap
     assert "REVOKE ALL ON DATABASE %I FROM PUBLIC" in bootstrap
     assert "alloydb-auth-proxy" in runner and "--auto-iam-authn" in runner
     assert "000_bootstrap_database.sql" in runner and "001_principal_acl_tags.sql" in runner
     assert "migration-sha256.txt" in runner and "table-grants.txt" in runner
-    assert "runs-on: [self-hosted, linux, hrz2-vpc]" in workflow
-    assert "MIGRATION_SERVICE_ACCOUNT" in workflow
 
 
 def test_acl_migration_revokes_public_and_grants_only_scoped_privileges() -> None:
