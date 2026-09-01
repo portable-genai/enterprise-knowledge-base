@@ -145,9 +145,11 @@ one before touching the threshold, and never lower the threshold to get green.
 
 ## Deploy / rollback
 
-The supported release path is `.github/workflows/managed-demo-release.yaml`; see the exact
-foundation variables, identities and prerequisites in `infra/terraform/README.md`. It is split at
-two approval boundaries:
+The supported release path is the two-phase procedure below, run by hand. It was previously
+described by a GitHub Actions workflow, which never ran because Actions are disabled
+organization-wide; the file has been removed rather than left as an automation nobody had. See
+the exact foundation variables, identities and prerequisites in `infra/terraform/README.md`. It
+is split at two approval boundaries:
 
 1. `managed-bootstrap` targets only APIs, regional KMS, its Artifact Registry service-agent key
    binding, the CMEK repository and the scoped image publisher. It builds three images and retains

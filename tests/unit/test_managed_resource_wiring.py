@@ -51,9 +51,6 @@ def test_scheduler_injects_exact_managed_resources_and_model_armor_exists() -> N
     assert "google_storage_bucket.corpus.name" in scheduler
     assert 'name  = "KB_RAW_SOURCE_BUCKET"' in scheduler
     assert "google_storage_bucket.raw_sources.name" in scheduler
-    assert not (ROOT / ".github/workflows/corpus-refresh.yaml").exists(), (
-        "Cloud Scheduler -> reviewed Cloud Run Job is the sole managed refresh path"
-    )
 
 
 def test_worm_sink_unique_writer_can_reach_locked_destination() -> None:
@@ -158,7 +155,6 @@ def test_regional_artifact_repository_owns_all_immutable_image_inputs() -> None:
     api = (ROOT / "infra/terraform/managed_api.tf").read_text(encoding="utf-8")
     scheduler = (ROOT / "infra/terraform/scheduler.tf").read_text(encoding="utf-8")
     services = (ROOT / "infra/terraform/apis.tf").read_text(encoding="utf-8")
-    workflow = (ROOT / ".github/workflows/build-managed-images.yaml").read_text(encoding="utf-8")
     assert 'resource "google_artifact_registry_repository" "images"' in artifact
     assert "location      = var.region" in artifact
     assert 'format        = "DOCKER"' in artifact
@@ -177,45 +173,3 @@ def test_regional_artifact_repository_owns_all_immutable_image_inputs() -> None:
     assert "artifactregistry.googleapis.com" in services
     assert "local.artifact_repo_prefix" in api
     assert "local.artifact_repo_prefix" in scheduler
-    assert "gcloud auth configure-docker" in workflow
-    assert "@%s" in workflow and "managed-image-digests.tfvars" in workflow
-    assert "terraform apply" not in workflow
-
-
-def test_managed_demo_release_is_ordered_two_phase_and_evidence_producing() -> None:
-    workflow = (ROOT / ".github/workflows/managed-demo-release.yaml").read_text(encoding="utf-8")
-    assert "runs-on: ubuntu-latest" not in workflow
-    assert workflow.count("runs-on: [self-hosted, linux, hrz2-vpc]") == 5
-    image_workflow = (ROOT / ".github/workflows/build-managed-images.yaml").read_text(
-        encoding="utf-8"
-    )
-    assert "runs-on: [self-hosted, linux, hrz2-vpc]" in image_workflow
-    providers = (ROOT / "infra/terraform/providers.tf").read_text(encoding="utf-8")
-    variables = (ROOT / "infra/terraform/variables.tf").read_text(encoding="utf-8")
-    readme = (ROOT / "infra/terraform/README.md").read_text(encoding="utf-8")
-    assert 'backend "gcs" {}' in providers
-    assert "environment: managed-bootstrap" in workflow
-    assert "environment: managed-release" in workflow
-    assert "-target=google_artifact_registry_repository.images" in workflow
-    assert "-target=google_artifact_registry_repository_iam_member.publisher" in workflow
-    assert "Refuse an ungoverned or non-Singapore state backend" in workflow
-    assert "iamConfiguration.uniformBucketLevelAccess.enabled" in workflow
-    assert "iamConfiguration.publicAccessPrevention" in workflow
-    assert "encryption.defaultKmsKeyName" in workflow
-    assert "-var=bootstrap_only=true" in workflow
-    assert "managed-image-digests.tfvars" in workflow
-    assert "-var=bootstrap_only=false" in workflow
-    assert workflow.count("iap_backend_service_id=${backend_id}") == 2
-    assert "managed_api_backend_service_id" in workflow
-    assert "managed_api_iap_audience" in workflow
-    assert "needs: build" in workflow and "needs: apply" in workflow
-    assert "scripts/apply_managed_schema.sh" in workflow
-    assert "scripts/render_managed_demo_artifacts.py" in workflow
-    assert "SOURCE_PUBLISHER_SERVICE_ACCOUNT" in workflow
-    assert "CONTROL_PUBLISHER_SERVICE_ACCOUNT" in workflow
-    assert 'gcloud run jobs execute "$REFRESH_JOB_NAME"' in workflow
-    assert '"$REGION" --wait' in workflow
-    assert "X-Dev-Persona" not in workflow
-    assert 'variable "bootstrap_only"' in variables
-    assert "managed_api_url" in workflow
-    assert "two protected environment boundaries" in readme
