@@ -118,7 +118,7 @@ under `Capability gaps`.
   per-service CMEK, exact Singapore system-log imports, Observability/Trace effective preflight,
   dry-run-first VPC-SC, WORM retention floor, a credential-free `terraform fmt`/`validate` CI job and
   `make tf-validate`). What is missing cannot be produced here: a hosted GitHub Actions run
-  to evidence the job (the account is billing-blocked, so no job can start) and live
+  to evidence the job (no hosted CI existed until GitHub Actions became the fleet's gate on 2026-09-02) and live
   enforcement proof from a named GCP project (Org Policy, perimeter and CMEK actually
   denying). See the D5 row.
 
