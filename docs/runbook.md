@@ -146,8 +146,10 @@ one before touching the threshold, and never lower the threshold to get green.
 ## Deploy / rollback
 
 The supported release path is the two-phase procedure below, run by hand. It was previously
-described by a GitHub Actions workflow, which never ran because Actions are disabled
-organization-wide; the file has been removed rather than left as an automation nobody had. See
+described by a GitHub Actions workflow, which never ran because Actions were disabled
+organization-wide at the time; the file was removed rather than left as an automation nobody
+had. GitHub Actions has been the fleet's live CI since 2026-09-02, but this release workflow
+has not been re-added, so the two-phase procedure stays the supported path. See
 the exact foundation variables, identities and prerequisites in `infra/terraform/README.md`. It
 is split at two approval boundaries:
 
