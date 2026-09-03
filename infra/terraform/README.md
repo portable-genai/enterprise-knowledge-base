@@ -31,10 +31,10 @@ wholesale by an on-prem equivalent without touching the domain.
 Follow the two-phase procedure in [`../../docs/runbook.md`](../../docs/runbook.md); do not
 bootstrap a managed demo by running a `gcp` process on localhost. The procedure keeps two
 approval boundaries and never stores a service-account key or database password. It used to be
-carried by a GitHub Actions workflow, which never ran because Actions are disabled
-organization-wide; the boundaries are now enforced by the operator following the runbook, not by
-a protected environment, so treat the approval gates as a manual control until a Cloud Build
-release trigger replaces them.
+carried by a GitHub Actions workflow, which never ran because Actions were disabled
+organization-wide at the time; the boundaries are now enforced by the operator following the
+runbook, not by a protected environment, so treat the approval gates as a manual control until a
+GitHub Actions release workflow replaces them.
 
 Foundation prerequisites, created outside this stack:
 
