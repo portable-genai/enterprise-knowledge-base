@@ -1,8 +1,8 @@
-# Architecture : Hrz2 Enterprise Knowledge Base
+# Architecture : `enterprise-knowledge-base`
 
 > **Authority:** SPEC > ARCHITECTURE > COMPLIANCE > README > `docs/`. See [`docs/doc-authority.md`](docs/doc-authority.md).
 
-Hrz2 is a hexagonal (ports-and-adapters) service. The domain core is pure standard library;
+`enterprise-knowledge-base` is a hexagonal (ports-and-adapters) service. The domain core is pure standard library;
 every external concern (retrieval, access control, ingest, LLM, guardrail, audit) is a
 `Protocol` port with four adapter families: `gcp` (managed, lazy SDK), `local` (SDK-free,
 a WORKING offline laptop stack), `platform` (httpx clients to sibling services), and
@@ -21,12 +21,12 @@ ingest flow, and the deployment topology.
 | `FreshnessLedgerPort` | AlloyDB | SQLite | | fail-fast |
 | `LLMPort` | Gemini | deterministic generator | | fail-fast |
 | `GroundingPort` | google_search | disabled | | benign default |
-| `GuardrailPort` | Model Armor | heuristic | Hrz1 remote | fail-fast |
-| `PIIRedactionPort` | DLP | regex | Hrz1 remote | fail-fast |
-| `AuditSinkPort` | Cloud Logging WORM | append-only SQLite | Hrz5 remote | fail-fast |
+| `GuardrailPort` | Model Armor | heuristic | `agent-guardrail-gateway` remote | fail-fast |
+| `PIIRedactionPort` | DLP | regex | `agent-guardrail-gateway` remote | fail-fast |
+| `AuditSinkPort` | Cloud Logging WORM | append-only SQLite | `agent-observability` remote | fail-fast |
 | `ObservabilityTracerPort` | Cloud Trace | no-op | | no-op |
 | `EvaluationGatePort` | deterministic offline eval gate | offline eval gate | | fail-fast |
-| `AgentRegistryPort` | reserved, not advertised until trusted runtime context exists | in-process | Hrz3 remote | fail-fast |
+| `AgentRegistryPort` | reserved, not advertised until trusted runtime context exists | in-process | `agent-registry` remote | fail-fast |
 | `ToolCatalogPort` | MCP catalog | in-process | | fail-fast |
 | `AgentRuntimePort` / `SessionPort` / `MemoryPort` | disabled pending trusted invocation context | in-process | | fail-fast |
 
@@ -45,7 +45,7 @@ the scheduled/administrative pipeline is the only managed writer. Local keeps th
 SDK-free demo.
 
 The default `local` path imports no google-cloud package. Under `local`, the
-platform-client ports (to Hrz1/Hrz3/Hrz5) use in-process implementations, not HTTP to siblings.
+platform-client ports (to `agent-guardrail-gateway`, `agent-registry`, `agent-observability`) use in-process implementations, not HTTP to siblings.
 
 ## 1. Layering
 
@@ -73,7 +73,7 @@ flowchart TB
   subgraph L4["Adapters"]
     GCP["gcp: AlloyDB FTS and ACL, portable parse, regional GCS, Gemini,<br/>Model Armor, DLP, Cloud Logging and Cloud Trace"]
     LOCAL["local: SQLite FTS5, deterministic LLM, regex DLP,<br/>append-only SQLite audit, in-process stores (WORKING offline)"]
-    PLAT["platform: Hrz1 guardrail and redaction, Hrz3 registry, Hrz5 audit"]
+    PLAT["platform: `agent-guardrail-gateway` and redaction, `agent-registry`, `agent-observability`"]
     ONP["onprem: fail-fast placeholders"]
   end
 
@@ -120,9 +120,9 @@ identity with the commons class so a future copy fails loudly. The same applies 
 `ObservabilityTracerPort`, which `ports/observability.py` now re-exports instead of restating.
 The server-verified `Principal`, `RequestContext`, `IdentityError` and safe `ANONYMOUS` value are
 likewise re-exported from `hex-service-kit`; that shared `Principal` owns the narrow-only
-`entitlement_principals` rule. The same contract suite asserts object identity, so Hrz2 cannot
+`entitlement_principals` rule. The same contract suite asserts object identity, so `enterprise-knowledge-base` cannot
 quietly restore a behaviorally drifting copy.
-`EvaluationGatePort` is deliberately declared here because its result is Hrz2's domain
+`EvaluationGatePort` is deliberately declared here because its result is `enterprise-knowledge-base`'s domain
 `EvalReport`. `agent-eval-kit` remains a dev-only command and mutation-test scaffold. The serving
 port is a structural Protocol and imports none of that package; a subprocess contract test blocks
 `agent_eval_kit` while importing the full serving app to keep the packaging boundary executable.
@@ -251,9 +251,9 @@ flowchart LR
   end
 
   subgraph platform["Horizon platform (hrz)"]
-    Hrz1["Hrz1 guardrail and redaction"]
-    Hrz3["Hrz3 registry"]
-    Hrz5["Hrz5 observability and audit"]
+    `agent-guardrail-gateway`["`agent-guardrail-gateway` and redaction"]
+    `agent-registry`["`agent-registry`"]
+    `agent-observability`["`agent-observability` and audit"]
   end
 
   RUN --> ADB
@@ -268,9 +268,9 @@ flowchart LR
   JOB --> CTRL
   JOB --> GCS
   JOB --> ADB
-  RUN -. platform profile .-> Hrz1
-  RUN -. platform profile .-> Hrz3
-  RUN -. platform profile .-> Hrz5
+  RUN -. platform profile .-> `agent-guardrail-gateway`
+  RUN -. platform profile .-> `agent-registry`
+  RUN -. platform profile .-> `agent-observability`
 ```
 
 Each managed source allocation is bounded before content enters the process: 1 MiB for the
@@ -297,7 +297,7 @@ adapter, proven by `tests/contract/test_port_parity.py` (parametrised over `loca
   It backs the dev loop, the unit suite, and CI, and proves the domain runs off-cloud (P-02,
   P-12).
 - `onprem` is the **fail-fast** Google Distributed Cloud migration target: every method
-  raises `NotImplementedError` and the CLI exits 2 with the migration message. Porting Hrz2 is
+  raises `NotImplementedError` and the CLI exits 2 with the migration message. Porting `enterprise-knowledge-base` is
   filling in those bodies; the domain core and the service callers do not change.
 
 See `docs/onprem-migration.md`.

@@ -56,13 +56,15 @@ class GenAiEvalAdapter:
     def evaluate(self, dataset_path: str) -> EvalReport:
         """Refuse a cloud-only verdict that cannot compute ACL and retrieval metrics.
 
-        Hrz2 deliberately binds its deterministic local evaluation gate in every profile. The
+        enterprise-knowledge-base deliberately binds its deterministic local evaluation gate in
+        every profile. The
         managed service can score citation/safety, but cannot replace the repo-owned ACL and
         retrieval oracles; presenting its partial result as a promotion verdict is misleading.
         """
         del dataset_path
         raise RuntimeError(
-            "GenAiEvalAdapter is evidence-only and cannot issue the Hrz2 promotion verdict; "
+            "GenAiEvalAdapter is evidence-only and cannot issue the enterprise-knowledge-base "
+            "promotion verdict; "
             "use the repo-owned LocalOfflineEvalAdapter gate"
         )
 

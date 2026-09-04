@@ -1,12 +1,12 @@
 """An indexed document must be withdrawable through the governed surface, on every profile.
 
-Hrz2 exposed ingest, search, answer and a DELETE. The DELETE was gated behind
+enterprise-knowledge-base exposed ingest, search, answer and a DELETE. The DELETE was gated behind
 `_require_local_write_surface`, which refuses anything that is not the local demo profile,
 because managed serving identities are deliberately read-only for corpus WRITES and the bulk
 ingest path runs as a reviewed pipeline job.
 
 Retraction is not a bulk corpus write and the two do not belong behind one switch. The
-consequence of collapsing them was recorded in `cdd-sow-research`, whose platform adapter
+consequence of collapsing them was recorded in cdd-sow-research, whose platform adapter
 raises `NotImplementedError` by name rather than reporting a removal that did not happen: on
 the platform profile the system could not honour an erasure request, could not withdraw
 evidence filed against the wrong case, and could not correct a document later found to be

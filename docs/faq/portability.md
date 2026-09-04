@@ -9,10 +9,10 @@ rejection and hash-verified JSON Lines audit export/reload.
 ## What remains unproved?
 
 It does not prove live managed services, completed on-prem adapters, managed-search corpus
-migration, cross-tenant migration or Hrz5 delivery. Those require target-host evidence.
+migration, cross-tenant migration or `agent-observability` delivery. Those require target-host evidence.
 
 ## Why is platform a hybrid profile?
 
-Hrz2 delegates guardrail/redaction to Hrz1, registry to Hrz3 and audit to Hrz5. Ports with
-no sibling owner continue to use their managed Hrz2 adapter. Unknown profiles never receive
+`enterprise-knowledge-base` delegates guardrail/redaction to `agent-guardrail-gateway`, registry to `agent-registry` and audit to `agent-observability`. Ports with
+no sibling owner continue to use their managed `enterprise-knowledge-base` adapter. Unknown profiles never receive
 that fallback.

@@ -39,7 +39,9 @@ class IamAccessControlAdapter:
         self._engine: Any | None = None
 
     def _get_engine(self) -> Any:
-        """Build the same private AlloyDB connection used by the other Hrz2 stores."""
+        """Build the same private AlloyDB connection used by the other enterprise-knowledge-base
+        stores.
+        """
         if self._engine is not None:
             return self._engine
         options = connection_options(self._cfg)

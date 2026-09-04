@@ -1,4 +1,4 @@
-# Hrz2 Enterprise Knowledge Base : Terraform (asia-southeast1)
+# `enterprise-knowledge-base` : Terraform (asia-southeast1)
 
 Concrete, Singapore-resident infrastructure for the managed (`gcp`) profile. This reference
 module is deliberately pinned to Singapore while the core/adapters remain region-parametric;
@@ -11,7 +11,7 @@ wholesale by an on-prem equivalent without touching the domain.
 
 | File | Resources | Principle |
 | --- | --- | --- |
-| `apis.tf` | Enables exactly the services Hrz2 uses | P-01 |
+| `apis.tf` | Enables exactly the services `enterprise-knowledge-base` uses | P-01 |
 | `kms.tf` | One regional CMEK key ring + key, per-service key bindings | P-03, P-09 |
 | `cloud_storage.tf` | Separate CMEK raw-source, publisher-owned control, and redacted-output buckets with bucket-scoped IAM | P-03, P-04, P-09 |
 | `alloydb.tf` | Private AlloyDB cluster + primary + per-workload IAM database users | P-03, P-05, P-09 |

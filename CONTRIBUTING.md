@@ -1,4 +1,4 @@
-# Contributing to Hrz2 Enterprise Knowledge Base
+# Contributing to `enterprise-knowledge-base`
 
 Thanks for your interest. This is a public engineering-portfolio reference repo; the bar is
 that every change keeps the offline gate green and respects the hexagonal boundaries.

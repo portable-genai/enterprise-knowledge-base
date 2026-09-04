@@ -7,8 +7,8 @@ interpretation, control effectiveness and regulator mapping.
 
 ## Where does durable audit belong?
 
-Hrz5 owns cross-service audit. Hrz2 has a hash-chained local stand-in and managed WORM sink;
-the bounded proof does not relabel either as completed Hrz5 delivery.
+`agent-observability` owns cross-service audit. `enterprise-knowledge-base` has a hash-chained local stand-in and managed WORM sink;
+the bounded proof does not relabel either as completed `agent-observability` delivery.
 
 ## What evidence should adopters retain?
 

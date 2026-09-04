@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Bounded executable portability proof for Hrz2.
+"""Bounded executable portability proof for enterprise-knowledge-base.
 
 This offline proof checks selector and port-map behavior, deterministic local execution,
 SDK-free managed construction, identity replacement, fail-fast on-prem behavior, and a
 hash-verified open-format audit export/reload. It does not prove a live managed service,
-completed on-prem adapters, data migration from managed search, or Hrz5 delivery.
+completed on-prem adapters, data migration from managed search, or agent-observability delivery.
 """
 
 from __future__ import annotations
@@ -74,7 +74,7 @@ def _event(action: str) -> AuditEvent:
 
 
 def main() -> int:
-    print("Hrz2 bounded portability proof")
+    print("enterprise-knowledge-base bounded portability proof")
     base = Settings.load()
     _require(base.profile == "local", "proof must run with KB_PROFILE=local")
     _require(set(base.adapters) == EXPECTED_PORTS, "port set")
@@ -230,7 +230,7 @@ def main() -> int:
     print(
         "LIMITS not proved here: live managed services/IAP, completed on-prem, managed WORM "
         "or corpus migration, cross-tenant/policy/regulator/UI portability, live DLP "
-        "custom-info-type behavior, backup reconciliation, or Hrz5 audit delivery."
+        "custom-info-type behavior, backup reconciliation, or agent-observability delivery."
     )
     return 0
 

@@ -1,4 +1,4 @@
-# Demo scripts : Hrz2 governed-RAG (ACL-aware, cited, offline)
+# Demo scripts : `enterprise-knowledge-base` governed-RAG (ACL-aware, cited, offline)
 
 All scripts are SDK-free and run against the in-process `local` stack (SQLite FTS5 +
 deterministic LLM : no Google Cloud, no API key, no emulator). They drive the *real*

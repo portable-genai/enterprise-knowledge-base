@@ -1,6 +1,6 @@
 # Governed-RAG remote contract
 
-Hrz2 owns the sibling-service contract for ACL-aware search and grounded answers. Consumers
+`enterprise-knowledge-base` owns the sibling-service contract for ACL-aware search and grounded answers. Consumers
 must discover it at `/.well-known/governed-rag-contract` and use the schemas in `/openapi.json`.
 The contract identifier is `hrz2.governed-rag`; its current version is `1.0`.
 

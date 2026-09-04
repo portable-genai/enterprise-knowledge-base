@@ -1,4 +1,4 @@
-"""Owned, versioned identifiers for the Hrz2 governed-RAG remote contract."""
+"""Owned, versioned identifiers for the enterprise-knowledge-base governed-RAG remote contract."""
 
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Self-start and strictly walk the live Hrz2 demo server without a browser."""
+"""Self-start and strictly walk the live enterprise-knowledge-base demo server without a browser."""
 
 from __future__ import annotations
 
@@ -109,7 +109,7 @@ def main() -> int:
         server.server_close()
         thread.join(timeout=10)
 
-    print("PASS Hrz2 live demo: self-start, strict four-step walk and restart")
+    print("PASS enterprise-knowledge-base live demo: self-start, strict four-step walk and restart")
     return 0
 
 

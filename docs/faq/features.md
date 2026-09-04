@@ -1,14 +1,14 @@
 # Features FAQ
 
-## What does Hrz2 own?
+## What does `enterprise-knowledge-base` own?
 
 It owns governed corpus ingestion, ACL-aware retrieval, citations, grounded answer
 orchestration and freshness metadata. It is not the shared safety or audit platform.
 
 ## Which sibling systems own adjacent controls?
 
-Hrz1 owns shared safety, Hrz3 agent registration, Hrz4 quality promotion, Hrz5 cross-service
-audit and Hrz7 human review. Hrz2 integrates through explicit ports.
+`agent-guardrail-gateway` owns shared safety, `agent-registry` agent registration, `model-quality-gate` quality promotion, `agent-observability` cross-service
+audit and `human-review-console` human review. `enterprise-knowledge-base` integrates through explicit ports.
 
 ## Does an empty retrieval invent an answer?
 

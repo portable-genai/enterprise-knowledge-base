@@ -7,7 +7,7 @@ entitlements. Tenant and all-of ACL filtering run in the domain.
 
 ## Where do shared safety and human review belong?
 
-Hrz1 owns shared guardrails and redaction. Hrz7 owns durable human decisions. Hrz2 applies
+`agent-guardrail-gateway` owns shared guardrails and redaction. `human-review-console` owns durable human decisions. `enterprise-knowledge-base` applies
 its local policy seam and preserves the evidence used by those systems.
 
 ## Is local identity suitable for production?

@@ -1,16 +1,16 @@
-# Hrz2 Enterprise Knowledge Base : Build Specification
+# `enterprise-knowledge-base` : Build Specification
 
 > **Authority:** SPEC > ARCHITECTURE > COMPLIANCE > README > `docs/`. See [`docs/doc-authority.md`](docs/doc-authority.md).
 
-## 1. What Hrz2 is
+## 1. What `enterprise-knowledge-base` is
 
-Hrz2 is the shared, **ACL-aware governed RAG** over the bank corpus: the "brain" every other
+`enterprise-knowledge-base` is the shared, **ACL-aware governed RAG** over the bank corpus: the "brain" every other
 agent queries. It ingests documents (with ACL tags, residency and freshness metadata),
 extracts them with a portable parser, redacts PII before persistence, and
 serves **ACL-filtered, cited** passages and (optionally) a grounded synthesized answer. It
 is a horizontal platform service, not a vertical app.
 
-Catalog identity: **Hrz2**, group `hrz` (Horizon control plane), priority **P0**, buyer
+Catalog identity: `enterprise-knowledge-base`, group `hrz` (Horizon control plane), priority **P0**, buyer
 Data / Knowledge Engineering. Service port default **8082** (`KNOWLEDGE_BASE_URL`).
 
 ## 2. Locked decisions
@@ -25,7 +25,7 @@ Data / Knowledge Engineering. Service port default **8082** (`KNOWLEDGE_BASE_URL
 - **Freshness + residency** recorded in an AlloyDB ledger; documents past their TTL are
   re-indexed out of band by the refresh job.
 - **Profiles**: `gcp` (managed), `local` (a WORKING offline laptop stack), `platform`
-  (remote clients to Hrz1/Hrz3/Hrz5), `onprem` (fail-fast SDK-free placeholders). Selected by
+  (remote clients to `agent-guardrail-gateway`, `agent-registry`, `agent-observability`), `onprem` (fail-fast SDK-free placeholders). Selected by
   `KB_PROFILE`, which every deployment sets explicitly (`gcp` in production, `local` for dev,
   tests and CI). An unset variable is NOT a choice: it binds the SDK-free adapters but is
   refused the `local` relaxations, so a forgotten variable cannot serve a loosened posture.
@@ -40,7 +40,7 @@ Data / Knowledge Engineering. Service port default **8082** (`KNOWLEDGE_BASE_URL
 
 ### 2a. The `local` profile (offline laptop stack)
 
-`local` is a third, fully working deployment option that runs the **whole** Hrz2 pipeline
+`local` is a third, fully working deployment option that runs the **whole** `enterprise-knowledge-base` pipeline
 end to end with **no Google Cloud, no API key, and no emulator required**. It is what the
 dev loop, the test suite, and CI run on. Per-port local backends:
 
@@ -60,7 +60,7 @@ dev loop, the test suite, and CI run on. Per-port local backends:
 | Evaluation (deterministic gate) | delegates to the in-repo offline `eval/run_eval.py` |
 
 The default `local` path imports **no** google-cloud package. The platform-client ports
-(to Hrz1/Hrz3/Hrz5) under `local` use **in-process** implementations, not HTTP to siblings (a
+(to `agent-guardrail-gateway`, `agent-registry`, `agent-observability`) under `local` use **in-process** implementations, not HTTP to siblings (a
 laptop runs one app, not the whole platform). Optional higher-fidelity local runs route to
 Google's official emulators when the standard `FIRESTORE_EMULATOR_HOST` /
 `PUBSUB_EMULATOR_HOST` / `STORAGE_EMULATOR_HOST` env vars are set AND the `[gcp]` client
@@ -103,12 +103,12 @@ Ports (all `@runtime_checkable Protocol`):
 | `FreshnessLedgerPort` | AlloyDB | SQLite | | stub |
 | `LLMPort` | Gemini | deterministic generator | | stub |
 | `GroundingPort` | google_search | disabled | | benign default |
-| `GuardrailPort` | Model Armor | heuristic | Hrz1 remote | stub |
-| `PIIRedactionPort` | DLP | regex | Hrz1 remote | stub |
-| `AuditSinkPort` | Cloud Logging WORM | append-only SQLite | Hrz5 remote | stub |
+| `GuardrailPort` | Model Armor | heuristic | `agent-guardrail-gateway` remote | stub |
+| `PIIRedactionPort` | DLP | regex | `agent-guardrail-gateway` remote | stub |
+| `AuditSinkPort` | Cloud Logging WORM | append-only SQLite | `agent-observability` remote | stub |
 | `ObservabilityTracerPort` | Cloud Trace | no-op | | no-op |
 | `EvaluationGatePort` | deterministic offline eval gate | offline eval gate | | stub |
-| `AgentRegistryPort` | disabled pending trusted runtime context | in-process | Hrz3 remote | stub |
+| `AgentRegistryPort` | disabled pending trusted runtime context | in-process | `agent-registry` remote | stub |
 | `ToolCatalogPort` | MCP catalog | in-process | | stub |
 | `AgentRuntimePort` / `SessionPort` / `MemoryPort` | optional and disabled pending trusted context | in-process KB service / stores | | stub |
 
@@ -187,7 +187,7 @@ freshness_policy=None, citation_store=None)`:
 Policies: `KbReviewPolicy` (P-06), `FreshnessPolicy` (TTL + residency, P-03 / P-07) and
 `CitationPolicy` (the anchor match floor).
 
-## 6. Hrz2 HTTP contract (consumed by sibling repos)
+## 6. `enterprise-knowledge-base` HTTP contract (consumed by sibling repos)
 
 The owned version and compatibility rules are in
 [`docs/governed-rag-remote-contract.md`](docs/governed-rag-remote-contract.md). A machine-readable
@@ -237,12 +237,12 @@ Local remains an explicitly selected loopback demo: `X-Dev-Persona` supplies a s
 and an optional `KB_S2S_TOKEN` adds a constant-time shared-secret check. An unselected profile
 inherits neither local relaxation.
 
-### Services Hrz2 consumes (R1, R2, R4)
+### Services `enterprise-knowledge-base` consumes (R1, R2, R4)
 
-- **Hrz1 guardrail** (`GUARDRAIL_GATEWAY_URL` default `:8080`): `POST /v1/guardrail/screen`,
+- **`agent-guardrail-gateway`** (`GUARDRAIL_GATEWAY_URL` default `:8080`): `POST /v1/guardrail/screen`,
   `POST /v1/redact`.
-- **Hrz3 registry** (`AGENT_REGISTRY_URL` default `:8083`): `POST /v1/agents`, `GET /v1/agents`.
-- **Hrz5 observability/audit** (`OBSERVABILITY_URL` default `:8085`): `POST /v1/audit`.
+- **`agent-registry`** (`AGENT_REGISTRY_URL` default `:8083`): `POST /v1/agents`, `GET /v1/agents`.
+- **`agent-observability`/audit** (`OBSERVABILITY_URL` default `:8085`): `POST /v1/audit`.
 
 ## 6b. Bank-owned policy numbers (the `policy:` section)
 

@@ -1,4 +1,4 @@
-# Hrz2 FAQs
+# `enterprise-knowledge-base` FAQs
 
 - [Security](security.md)
 - [Portability](portability.md)
