@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the real Hrz2 demo and assert its observed audit-first evidence."""
+"""Run the real enterprise-knowledge-base demo and assert its observed audit-first evidence."""
 
 from __future__ import annotations
 
@@ -167,7 +167,10 @@ def main() -> int:
             check=True,
         )
 
-    print("PASS Hrz2 demo self-test: observed domain, audit and rendered evidence agree")
+    print(
+        "PASS enterprise-knowledge-base demo self-test: observed domain, audit and rendered "
+        "evidence agree"
+    )
     return 0
 
 

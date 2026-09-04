@@ -1,9 +1,9 @@
-# Hrz2: Enterprise Knowledge Base
+# `enterprise-knowledge-base`: Enterprise Knowledge Base
 
 **Industries:** All GenAI (cross-industry)
 
 The shared, **ACL-aware governed RAG** over the bank corpus: the "brain" every other agent
-queries. Hrz2 ingests documents (with ACL tags, residency and freshness metadata), extracts
+queries. `enterprise-knowledge-base` ingests documents (with ACL tags, residency and freshness metadata), extracts
 them in memory with a portable parser, redacts PII before persistence, and serves
 **ACL-filtered, cited** passages and (optionally) a grounded synthesized answer. It is a
 horizontal platform service, not a vertical app.
@@ -15,7 +15,7 @@ offline with **no Google Cloud SDK, no API key, and no emulator**.
 
 - Package: `enterprise_kb` · CLI: `enterprise-knowledge-base` · service port `8082` (`KNOWLEDGE_BASE_URL`)
 - Profiles: `gcp` (managed) · `local` (WORKING offline laptop stack, the dev / test
-  default) · `platform` (remote clients to Hrz1/Hrz3/Hrz5) · `onprem` (fail-fast SDK-free
+  default) · `platform` (remote clients to `agent-guardrail-gateway`, `agent-registry`, `agent-observability`) · `onprem` (fail-fast SDK-free
   placeholders)
 
 Key guides: [demo](DEMO.md), [adoption](docs/ADOPTING.md),
@@ -28,7 +28,7 @@ of `docs/`. A lower document may add detail, never contradict a higher one, and 
 feature described as forthcoming is treated as a bug. The full rule, including which file
 to edit for which change, is [`docs/doc-authority.md`](docs/doc-authority.md).
 
-## 1. What Hrz2 produces
+## 1. What `enterprise-knowledge-base` produces
 
 | Artifact | Endpoint | Shape |
 | --- | --- | --- |
@@ -262,7 +262,7 @@ Google-signed application token checked against `KB_S2S_AUDIENCE` and the explic
 AgentCard/A2A discovery is deliberately not published. Local keeps the optional constant-time
 `KB_S2S_TOKEN` check inside its loopback-by-default boundary. See SPEC §6a.
 
-## 7. The eval gate (Hrz4 / P-08)
+## 7. The eval gate (`model-quality-gate` / P-08)
 
 `python eval/run_eval.py` runs the real `KnowledgeBaseService.search` over a golden set and
 scores four metrics: `retrieval_recall` (at least 0.80), `acl_correctness` (at least 0.99),
@@ -303,10 +303,10 @@ R1..R6 map.
 
 ## 9. Platform dependencies
 
-Hrz2 consumes **Hrz1** (guardrail + redaction, R1) and **Hrz5** (audit, R2) through the optional
-`platform` adapter family. The Hrz3 client remains a portable future integration, but the current
+`enterprise-knowledge-base` consumes `agent-guardrail-gateway` (guardrail + redaction, R1) and `agent-observability` (audit, R2) through the optional
+`platform` adapter family. The `agent-registry` client remains a portable future integration, but the current
 managed release does not register an AgentCard until a verified-context A2A transport exists.
-Hrz2 itself **is** the governed store other agents query (R3).
+`enterprise-knowledge-base` itself **is** the governed store other agents query (R3).
 
 ## 10. Repository layout
 
@@ -339,7 +339,7 @@ tests/         unit, contract, integration (deselected by default)
 
 ## Cost and latency
 
-Size this system's cost and latency with the shared interactive calculator: [**live**](https://portable-genai.github.io/cost-latency-calculator/calc/calculator.html?system=Hrz2) or the [in-repo page](cost-latency-calculator.html). The engine and the pricing book are maintained once in [cost-latency-calculator](https://github.com/portable-genai/cost-latency-calculator).
+Size this system's cost and latency with the shared interactive calculator: [**live**](https://portable-genai.github.io/cost-latency-calculator/calc/calculator.html?system=enterprise-knowledge-base) or the [in-repo page](cost-latency-calculator.html). The engine and the pricing book are maintained once in [cost-latency-calculator](https://github.com/portable-genai/cost-latency-calculator).
 
 ## License
 

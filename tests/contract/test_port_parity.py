@@ -227,7 +227,7 @@ def test_tracer_port_and_token_usage_are_the_commons_objects_not_copies():
 
 
 def test_identity_values_are_the_commons_objects_not_copies():
-    """Hrz2 must consume the shared narrow-only principal contract verbatim."""
+    """enterprise-knowledge-base must consume the shared narrow-only principal contract verbatim."""
     from hex_service_kit import identity as commons
 
     from enterprise_kb.domain import identity

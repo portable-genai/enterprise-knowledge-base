@@ -1,7 +1,7 @@
 """S2S auth tests: authenticate the *calling service* beside the end-user Principal.
 
 These exercise the FastAPI app end to end with the ``local`` profile, proving the shared
-S2S contract (plan-hrz-s2s-auth, CD1) on Hrz2's governed data plane:
+S2S contract (plan-hrz-s2s-auth, CD1) on enterprise-knowledge-base's governed data plane:
 
 * fail-OPEN when ``KB_S2S_TOKEN`` is unset (the offline default, so the CI gate runs with
   zero secrets), fail-CLOSED (401) when it is set and the bearer is missing or wrong;

@@ -1,6 +1,6 @@
 # On-prem migration (reversibility / exit)
 
-Hrz2 demonstrates reversibility (P-02, P-12) as a property you can run, not a claim. Switching
+`enterprise-knowledge-base` demonstrates reversibility (P-02, P-12) as a property you can run, not a claim. Switching
 `KB_PROFILE` from `gcp` to `onprem` rebinds every port to a placeholder adapter targeting an
 on-premise platform (Google Distributed Cloud). The domain core and every service caller are
 untouched: only the adapter bodies change.

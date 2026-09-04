@@ -18,10 +18,11 @@ takes A2's :class:`~enterprise_kb.domain.models.AuditEvent`, with the redacted p
 and page-level citations a governed RAG store audits, so it is not the fleet's type to share.
 
 ``EvaluationGatePort`` also stays here as an intentional runtime boundary. Its method returns
-Hrz2's domain ``EvalReport``, while ``agent-eval-kit`` owns only the development-time command
-scaffold and mutation helpers. Importing that dev package from the port would make every serving
-process depend on test tooling. The local Protocol keeps structural compatibility without that
-dependency; a subprocess contract test blocks ``agent_eval_kit`` and imports the serving app.
+enterprise-knowledge-base's domain ``EvalReport``, while ``agent-eval-kit`` owns only the
+development-time command scaffold and mutation helpers. Importing that dev package from the port
+would make every serving process depend on test tooling. The local Protocol keeps structural
+compatibility without that dependency; a subprocess contract test blocks ``agent_eval_kit`` and
+imports the serving app.
 """
 
 from __future__ import annotations

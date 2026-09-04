@@ -1,9 +1,9 @@
 """Remote-platform registry adapter — thin HTTP client to A3.
 
-This is an optional future client for publishing an A2A AgentCard to the shared
-``agent-registry`` service. The current managed reference deployment deliberately does
-not publish a card: Hrz2 has no verified Agent Runtime/A2A invocation bridge. Constructing
-or retaining this portable adapter is not evidence that registration occurs. It implements
+This is an optional future client for publishing an A2A AgentCard to the shared ``agent-registry``
+service. The current managed reference deployment deliberately does not publish a card:
+enterprise-knowledge-base has no verified Agent Runtime/A2A invocation bridge. Constructing or
+retaining this portable adapter is not evidence that registration occurs. It implements
 :class:`AgentRegistryPort` against the registry's ``/v1/agents`` endpoints:
 
 * ``register`` → ``POST /v1/agents`` (``201``)

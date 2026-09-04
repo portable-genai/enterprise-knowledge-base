@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "enterprise-knowledge-base"
 version = "0.0.1"
-description = "A2 Enterprise Knowledge Base — ACL-aware governed RAG (search, grounded answer, ingest) over the bank corpus, built ports-and-adapters on the Gemini Enterprise Agent Platform."
+description = "Enterprise Knowledge Base — ACL-aware governed RAG (search, grounded answer, ingest) over the bank corpus, built ports-and-adapters on the Gemini Enterprise Agent Platform."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preview or apply a conservative mechanical rename of an Hrz2 fork."""
+"""Preview or apply a conservative mechanical rename of an enterprise-knowledge-base fork."""
 
 from __future__ import annotations
 
@@ -93,7 +93,9 @@ def _preflight_package_rename(new_package: str) -> tuple[Path, Path]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Rename an Hrz2 institutional fork.")
+    parser = argparse.ArgumentParser(
+        description="Rename an enterprise-knowledge-base institutional fork."
+    )
     parser.add_argument("--package", required=True)
     parser.add_argument(
         "--stem",

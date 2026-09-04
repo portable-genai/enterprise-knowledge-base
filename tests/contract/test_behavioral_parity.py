@@ -6,29 +6,27 @@ one canonical request, every SDK-free implementation of a port behaves identical
 boundary, and the migration placeholders fail fast rather than ever returning a silent
 wrong answer.
 
-Hrz2 is a horizontal control-plane service. It RUNS a generative LLM (the grounded
-``answer()`` path synthesises + self-critiques over ACL-filtered passages) and CONSUMES a
-few platform siblings through thin ``platform/remote_*`` HTTP delegates. This suite covers
-the representative ports the way each one can actually be proven:
+enterprise-knowledge-base is a horizontal control-plane service. It RUNS a generative LLM (the
+grounded ``answer()`` path synthesises + self-critiques over ACL-filtered passages) and CONSUMES a
+few platform siblings through thin ``platform/remote_*`` HTTP delegates. This suite covers the
+representative ports the way each one can actually be proven:
 
-* ``retrieval`` (RetrievalPort, the primary KB port) has ``local`` + ``onprem`` but NO
-  platform sibling (Hrz2 IS the KB; it does not consume itself), so there is no second real
-  implementation to compare against. We instead prove the ``local`` boundary is
-  deterministic: two independent in-memory adapters, self-seeded from the same corpus,
-  return the SAME frozen domain objects and byte-identical serialization for one query;
-  ``onprem`` fails fast.
-* ``guardrail`` (GuardrailPort -> Hrz1) and ``redaction`` (PIIRedactionPort -> Hrz1) have a
-  ``platform`` delegate that makes REAL ``httpx`` calls. We mock the sibling's documented
-  HTTP contract with ``respx`` and require ``local`` and ``platform`` to agree on the
-  load-bearing verdict at the boundary. We assert *semantic* parity (allow/block, direction,
-  finding categories / info-types) rather than field-for-field ``==``, because the offline
-  heuristic and the DLP/Model-Armor-backed gateway legitimately differ in their human-facing
-  ``reason``/``detail`` strings; the contract that callers depend on is the decision, not the
-  prose. ``onprem`` fails fast.
-* ``audit`` (AuditSinkPort -> Hrz5) has a ``platform`` delegate that POSTs the serialized
-  event. Here parity IS byte-identical: the JSON the platform sink receives equals the record
-  the local append-only WORM store persists, both being ``to_jsonable(event)``. ``onprem``
-  fails fast.
+* ``retrieval`` (RetrievalPort, the primary KB port) has ``local`` + ``onprem`` but NO platform
+  sibling (enterprise-knowledge-base IS the KB; it does not consume itself), so there is no second
+  real implementation to compare against. We instead prove the ``local`` boundary is deterministic:
+  two independent in-memory adapters, self-seeded from the same corpus, return the SAME frozen
+  domain objects and byte-identical serialization for one query; ``onprem`` fails fast. *
+  ``guardrail`` (GuardrailPort -> agent-guardrail-gateway) and ``redaction`` (PIIRedactionPort ->
+  agent-guardrail-gateway) have a ``platform`` delegate that makes REAL ``httpx`` calls. We mock the
+  sibling's documented HTTP contract with ``respx`` and require ``local`` and ``platform`` to agree
+  on the load-bearing verdict at the boundary. We assert *semantic* parity (allow/block, direction,
+  finding categories / info-types) rather than field-for-field ``==``, because the offline heuristic
+  and the DLP/Model-Armor-backed gateway legitimately differ in their human-facing
+  ``reason``/``detail`` strings; the contract that callers depend on is the decision, not the prose.
+  ``onprem`` fails fast. * ``audit`` (AuditSinkPort -> agent-observability) has a ``platform``
+  delegate that POSTs the serialized event. Here parity IS byte-identical: the JSON the platform
+  sink receives equals the record the local append-only WORM store persists, both being
+  ``to_jsonable(event)``. ``onprem`` fails fast.
 
 Plus the end-to-end proof: the full KB pipeline (governed ingest + a generative, cited
 ``answer``) runs under ``local`` and fails fast under ``onprem`` with **zero domain edits**,
@@ -107,7 +105,7 @@ def _adapter(port: str, profile: str):
 
 # --------------------------------------------------------------------------- #
 # RetrievalPort (the primary KB port) : local determinism + onprem fail-fast.
-# No platform sibling exists (Hrz2 is the KB), so parity is proven as boundary
+# No platform sibling exists (enterprise-knowledge-base is the KB), so parity is proven as boundary
 # determinism, not local-vs-platform.
 # --------------------------------------------------------------------------- #
 def test_retrieval_parity_local_is_deterministic_and_onprem_fails_fast():
@@ -130,7 +128,7 @@ def test_retrieval_parity_local_is_deterministic_and_onprem_fails_fast():
 
 
 # --------------------------------------------------------------------------- #
-# GuardrailPort (-> Hrz1) : same verdict for the same request, local vs platform.
+# GuardrailPort (-> agent-guardrail-gateway) : same verdict for the same request, local vs platform.
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize(("text", "should_allow"), [(BENIGN_TEXT, True), (INJECTION_TEXT, False)])
 def test_guardrail_parity_same_verdict_local_and_platform(text: str, should_allow: bool):
@@ -139,7 +137,7 @@ def test_guardrail_parity_same_verdict_local_and_platform(text: str, should_allo
     }
 
     with respx.mock:
-        # The Hrz1 gateway (Model Armor + DLP) serves its documented /v1/guardrail/screen
+        # The agent-guardrail-gateway (Model Armor + DLP) serves its documented /v1/guardrail/screen
         # answer for the same request: allow benign, block prompt-injection with a finding.
         respx.post(f"{GUARDRAIL_GATEWAY}/v1/guardrail/screen").respond(
             200,
@@ -175,13 +173,14 @@ def test_guardrail_parity_same_verdict_local_and_platform(text: str, should_allo
 
 
 # --------------------------------------------------------------------------- #
-# PIIRedactionPort (-> Hrz1) : PII gone at every implementation's boundary.
+# PIIRedactionPort (-> agent-guardrail-gateway) : PII gone at every implementation's boundary.
 # --------------------------------------------------------------------------- #
 def test_redaction_parity_same_request_local_and_platform():
     results: dict[str, RedactionResult] = {"local": _adapter("redaction", "local").redact(PII_TEXT)}
 
     with respx.mock:
-        # The Hrz1 gateway is DLP-backed; serve its documented /v1/redact answer for the same
+        # The agent-guardrail-gateway is DLP-backed; serve its documented /v1/redact answer for the
+        # same
         # request (DLP-style info-type masks), matching what the local regex adapter removed.
         respx.post(f"{GUARDRAIL_GATEWAY}/v1/redact").respond(
             200,
@@ -210,7 +209,7 @@ def test_redaction_parity_same_request_local_and_platform():
 
 
 # --------------------------------------------------------------------------- #
-# AuditSinkPort (-> Hrz5) : byte-identical record shape at every sink boundary.
+# AuditSinkPort (-> agent-observability) : byte-identical record shape at every sink boundary.
 # --------------------------------------------------------------------------- #
 def test_audit_parity_identical_payload_at_every_sink():
     event = AuditEvent(
@@ -236,7 +235,7 @@ def test_audit_parity_identical_payload_at_every_sink():
     local_audit.record(event)
     assert local_audit.read_all() == [expected]
 
-    # platform sink (Hrz5 observability): the POSTed body is byte-identical to what local stored.
+    # platform sink (agent-observability): the POSTed body is byte-identical to what local stored.
     with respx.mock:
         route = respx.post(f"{OBSERVABILITY}/v1/audit").respond(202)
         _adapter("audit", "platform").record(event)

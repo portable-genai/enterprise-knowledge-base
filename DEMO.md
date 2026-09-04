@@ -1,6 +1,6 @@
-# Demo guide : Hrz2 Enterprise Knowledge Base
+# Demo guide : `enterprise-knowledge-base`
 
-Step-by-step scripts for demoing Hrz2 two ways:
+Step-by-step scripts for demoing `enterprise-knowledge-base` two ways:
 
 - **Demo A : ACL-aware governed RAG, end to end** (the headline flow): the same seeded
   corpus seen by three callers : a retail RM gets a cited answer queued for standard

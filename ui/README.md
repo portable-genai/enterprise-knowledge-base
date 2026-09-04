@@ -1,7 +1,7 @@
-# Hrz2 Enterprise Knowledge Base : Demo UI
+# `enterprise-knowledge-base` : Demo UI
 
-A demo console for **Hrz2**, the ACL-aware governed RAG over the bank corpus. It is a thin
-presentation layer over the Hrz2 FastAPI backend: it renders ACL-filtered passages, grounded
+A demo console for `enterprise-knowledge-base`, the ACL-aware governed RAG over the bank corpus. It is a thin
+presentation layer over the `enterprise-knowledge-base` FastAPI backend: it renders ACL-filtered passages, grounded
 answers and the governance signals, and never bypasses the guardrail or the maker-checker
 gate.
 

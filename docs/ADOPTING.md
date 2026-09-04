@@ -1,19 +1,19 @@
-# Adopting Hrz2
+# Adopting `enterprise-knowledge-base`
 
-Hrz2 can be consumed as the shared governed knowledge service, connected to existing
+`enterprise-knowledge-base` can be consumed as the shared governed knowledge service, connected to existing
 institutional stores through adapters, or forked when independent ownership is required.
 Prefer adapter and policy configuration over changing the domain contracts.
 
 | Mode | Use when | Institution-owned changes |
 |---|---|---|
-| Consume Hrz2 | The shared search, answer and ingest contracts fit | Identity, corpus, policy, managed infrastructure |
+| Consume `enterprise-knowledge-base` | The shared search, answer and ingest contracts fit | Identity, corpus, policy, managed infrastructure |
 | Implement ports | Existing search, DLP, model or audit services remain authoritative | Adapter classes and explicit profile bindings |
-| Fork Hrz2 | Ownership, naming or release cadence must be independent | Rename, deployment, policy and regulator crosswalk |
+| Fork `enterprise-knowledge-base` | Ownership, naming or release cadence must be independent | Rename, deployment, policy and regulator crosswalk |
 
 Keep `domain/`, `ports/`, wire schemas and citation semantics stable. Institution-owned
 surfaces include adapter bindings, identity policy, ACL directory mapping, corpus sources,
-PII packs, thresholds, infrastructure and regulatory interpretation. Hrz1 owns shared safety,
-Hrz3 agent discovery, Hrz4 promotion, Hrz5 cross-service audit and Hrz7 human decisions.
+PII packs, thresholds, infrastructure and regulatory interpretation. `agent-guardrail-gateway` owns shared safety,
+`agent-registry` agent discovery, `model-quality-gate` promotion, `agent-observability` cross-service audit and `human-review-console` human decisions.
 The current repository has no separately named kernel module, so its A7 audit remains partial.
 
 ## Preview and apply a rename

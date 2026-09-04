@@ -15,7 +15,7 @@ Policy (SPEC 5), after the B3 closure:
 * Hard signals only ever RAISE the bar: confidence below ``answer_confidence_floor``, a
   sensitive ACL classification on a grounding passage, an ungrounded answer or a
   guardrail block escalate :class:`~enterprise_kb.domain.kernel.ReviewLevel` from
-  STANDARD to ENHANCED, and the reason is recorded for the audit trail and the Hrz7
+  STANDARD to ENHANCED, and the reason is recorded for the audit trail and the human-review-console
   review queue.
 * The raw ``search`` path (passages only, no synthesis) makes no claim, so it is not
   maker-checker gated here; ACL filtering and audit are its controls.

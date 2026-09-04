@@ -1,4 +1,4 @@
-# Runbook : operating Hrz2 Enterprise Knowledge Base
+# Runbook : operating `enterprise-knowledge-base`
 
 Operational guide for the `gcp` profile in `asia-southeast1`. For local/dev use the `local`
 profile (no credentials, SDK-free adapters via tests/CLI); `onprem` is deliberately fail-fast.

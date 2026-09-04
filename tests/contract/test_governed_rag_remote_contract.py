@@ -1,4 +1,6 @@
-"""The Hrz2-owned remote contract is versioned, discoverable and identity-safe."""
+"""The enterprise-knowledge-base-owned remote contract is versioned,
+discoverable and identity-safe.
+"""
 
 from fastapi.testclient import TestClient
 from tests.conftest import LOOPBACK_PEER

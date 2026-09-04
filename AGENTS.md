@@ -7,14 +7,14 @@ here. Read it first. This file carries only what is specific to this one.
 
 ## What this is
 
-Catalog id **Hrz2**. ACL-aware RAG over the bank corpus with citations, residency and
+Catalog id `enterprise-knowledge-base`. ACL-aware RAG over the bank corpus with citations, residency and
 freshness.
 
 ## Concrete bindings
 
 | | |
 |---|---|
-| Catalog id | `Hrz2` |
+| Catalog id | `enterprise-knowledge-base` |
 | Package | `src/enterprise_kb/` |
 | Profile variable | `KB_PROFILE` |
 | Adapter families | `gcp`, `local`, `onprem`, `platform` |

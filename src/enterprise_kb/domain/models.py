@@ -349,7 +349,7 @@ class GroundedAnswer:
     over governed content is a consequential output. Hard signals (low confidence, a
     sensitive ACL classification, an ungrounded or blocked answer) only raise
     ``review_level`` from STANDARD to ENHANCED; ``review_reasons`` records why, for the
-    audit trail and for the Hrz7 review queue.
+    audit trail and for the human-review-console review queue.
     """
 
     query: str
