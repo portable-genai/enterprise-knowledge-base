@@ -54,7 +54,7 @@ gcp = [
 dev = [
   # Shared commons: the --mode smoke|gate scaffold + report rendering used by
   # eval/run_eval.py. Dev-only: the serving core never imports it.
-  "agent-eval-kit @ git+https://github.com/portable-genai/agent-eval-kit@v0.0.1",
+  "agent-eval-kit @ git+https://github.com/portable-genai/agent-eval-kit@v0.0.3",
   "pytest>=8.2",
   # Validates the rendered Agent Plugins manifest against the vendored specification
   # schemas. A hard dev dependency, not optional: with it optional the manifest test skips,
