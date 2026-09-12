@@ -1,6 +1,6 @@
 """Local audit adapter (AuditSinkPort) : append-only, hash-chained local WORM stand-in.
 
-The ``local`` profile's stand-in for the **Cloud Logging locked WORM bucket**. Sourced
+The ``local`` profile's stand-in for the **Cloud Logging WORM bucket**. Sourced
 from the shared ``hex-service-kit`` commons: the store is
 :class:`hex_service_kit.audit.HashChainedAuditLog`, an append-only SQLite table (or
 in-memory for ``:memory:``) where every record is cryptographically chained to its

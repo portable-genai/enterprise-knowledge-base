@@ -114,9 +114,9 @@ def test_cmek_is_bound_per_service_because_it_does_not_cascade():
     assert "location = var.region" in kms, "the key ring must be regional, not global"
 
 
-def test_worm_bucket_keeps_a_governance_retention_floor():
+def test_worm_bucket_keeps_a_governance_retention_floor_whenever_it_is_locked():
     variables = _tf("variables.tf")
-    assert "var.retention_days >= 2557" in variables
+    assert "var.worm_locked ? var.retention_days >= 2557 : var.retention_days >= 1" in variables
     assert "retention_days = var.retention_days" in _tf("logging_worm.tf")
 
 

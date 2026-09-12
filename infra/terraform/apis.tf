@@ -17,7 +17,7 @@ locals {
     "storage.googleapis.com",              # Cloud Storage : single-region corpus bucket
     "dlp.googleapis.com",                  # Sensitive Data Protection / DLP (PII redaction)
     "modelarmor.googleapis.com",           # Model Armor guardrail
-    "logging.googleapis.com",              # Cloud Logging (WORM locked bucket + audit)
+    "logging.googleapis.com",              # Cloud Logging (WORM bucket + audit)
     "cloudtrace.googleapis.com",           # Cloud Trace (OpenTelemetry spans)
     "observability.googleapis.com",        # regional CMEK _Trace observability bucket
     "alloydb.googleapis.com",              # AlloyDB freshness ledger + chunk vector store

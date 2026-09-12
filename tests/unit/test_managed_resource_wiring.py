@@ -61,9 +61,9 @@ def test_worm_sink_unique_writer_can_reach_locked_destination() -> None:
     assert 'role    = "roles/logging.bucketWriter"' in logging
     assert "google_logging_project_sink.audit_to_worm.writer_identity" in logging
     assert 'variable "production_mode"' in variables
-    assert 'variable "lock_worm_bucket"' in variables
-    assert "locked = var.lock_worm_bucket" in logging
-    assert "!var.production_mode || var.lock_worm_bucket" in logging
+    assert 'variable "worm_locked"' in variables
+    assert "locked = var.worm_locked" in logging
+    assert "!var.production_mode || var.worm_locked" in logging
     readiness = (ROOT / "infra/terraform/managed_readiness.tf").read_text(encoding="utf-8")
     assert 'check "production_mode_requires_enforced_controls"' in readiness
     assert 'resource "terraform_data" "production_readiness"' in readiness
@@ -71,8 +71,8 @@ def test_worm_sink_unique_writer_can_reach_locked_destination() -> None:
     assert "var.enable_vpc_sc" in readiness
     assert "!var.vpc_sc_dry_run" in readiness
     assert "var.gemini_single_zone_pt_confirmed" in readiness
-    assert "production_mode  = false" in example
-    assert "lock_worm_bucket = false" in example
+    assert "production_mode = false" in example
+    assert "worm_locked     = true" in example
 
 
 def test_logging_cmek_uses_settings_api_identity_and_workloads_have_no_raw_key_access() -> None:

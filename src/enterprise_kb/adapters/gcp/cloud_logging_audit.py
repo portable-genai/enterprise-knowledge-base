@@ -29,7 +29,7 @@ _SEVERITY_BY_DECISION: dict[Decision, str] = {
 
 
 class CloudLoggingAuditAdapter:
-    """Write already-redacted ``AuditEvent`` records to the locked WORM log bucket."""
+    """Write already-redacted ``AuditEvent`` records to the WORM log bucket."""
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
