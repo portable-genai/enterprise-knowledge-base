@@ -17,7 +17,7 @@ wholesale by an on-prem equivalent without touching the domain.
 | `alloydb.tf` | Private AlloyDB cluster + primary + per-workload IAM database users | P-03, P-05, P-09 |
 | `model_armor_network.tf` | Exact-host regional PSC + private DNS for Model Armor and DLP | P-03, P-04 |
 | `artifact_registry.tf` | Regional CMEK Docker repository and scoped CI publisher | P-01, P-06, P-09 |
-| `logging_worm.tf` | Singapore CMEK `_Default`/`_Required`, governed-audit exclusion, locked WORM sink | P-03, P-08, P-09 |
+| `logging_worm.tf` | Singapore CMEK `_Default`/`_Required`, governed-audit exclusion, WORM sink locked by `worm_locked` (no default) | P-03, P-08, P-09 |
 | `observability_foundation.tf` | Read-only effective check for Singapore CMEK Cloud Trace storage | P-03, P-09 |
 | `iam.tf` | Least-privilege app, pipeline, migration and scheduler service accounts | P-06, P-09 |
 | `vpc_sc.tf` | VPC Service Controls perimeter around the AI/data APIs | P-03 |
@@ -184,11 +184,12 @@ workflow always replaces it with `managed_api_backend_service_id` before proceed
 
 ## Irreversible steps (read before apply)
 
-- **WORM lock** (`logging_worm.tf`): the recoverable demo default is
-  `production_mode=false` and `lock_worm_bucket=false`. A named production approval sets both
-  true; Terraform refuses production mode without that explicit confirmation. Once locked, the
-  bucket is Write-Once for the full retention window (~7 years) and cannot be unlocked, even by
-  a project owner. The same production gate also requires enforcing (not dry-run) VPC-SC and the
+- **WORM lock** (`logging_worm.tf`): `worm_locked` has NO default, so a plan refuses until the
+  deployment states it. A production deployment sets `worm_locked=true` (the ~7-year retention
+  floor binds only then) and `production_mode=true`; Terraform refuses production mode without
+  the lock. A reference or evaluation deployment states `worm_locked=false` with its reason and
+  stays destroyable. Once locked, the bucket is Write-Once for the full retention window (~7
+  years) and cannot be unlocked, even by a project owner. The same production gate also requires enforcing (not dry-run) VPC-SC and the
   reviewed Singapore Gemini Provisioned Throughput order; the recoverable demo keeps those
   irreversible/enforcing transitions explicit.
 - **KMS key** (`kms.tf`): `prevent_destroy = true`. A destroyed key strands all

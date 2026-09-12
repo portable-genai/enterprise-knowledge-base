@@ -26,7 +26,7 @@ check "production_mode_requires_enforced_controls" {
     condition = (
       !var.production_mode ||
       (
-        var.lock_worm_bucket &&
+        var.worm_locked &&
         var.enable_vpc_sc &&
         !var.vpc_sc_dry_run &&
         var.gemini_single_zone_pt_confirmed
@@ -52,7 +52,7 @@ resource "terraform_data" "production_readiness" {
       condition = (
         !var.production_mode ||
         (
-          var.lock_worm_bucket &&
+          var.worm_locked &&
           var.enable_vpc_sc &&
           !var.vpc_sc_dry_run &&
           var.gemini_single_zone_pt_confirmed

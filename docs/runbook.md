@@ -110,8 +110,8 @@ not a retired or unsupported retrieval service.
 
 ## Audit and trace
 
-Every search / answer / ingest writes an already-redacted `AuditEvent` to the locked WORM
-Cloud Logging bucket (retention ~7 years). Query it by label
+Every search / answer / ingest writes an already-redacted `AuditEvent` to the WORM Cloud
+Logging bucket (retention ~7 years; a production deployment locks it with `worm_locked=true`). Query it by label
 (`action`, `actor`, `decision`, `resource`). Trace spans carry ids and metadata only:
 message content capture is OFF, so no prompt, passage, or answer text ever lands on a span
 (P-04).
@@ -187,8 +187,9 @@ deployed API reports the managed Singapore profile, the expected document is fre
 identity, search returns it, and answer cites it with the maker-checker flag intact. Retain the
 test result with the release evidence; the offline gate only deselects this integration test.
 
-The recoverable demo posture leaves the WORM bucket unlocked; named production requires separately
-reviewed `production_mode=true` and `lock_worm_bucket=true`. The lock and KMS key protection are
-irreversible. Roll back the API/UI by applying prior immutable digests; the corpus and ledger remain
+`worm_locked` has no default: every deployment states it, because an irreversible control must never
+arrive because a file said nothing. A reference or evaluation deployment states `worm_locked=false`
+with its reason and stays destroyable; named production requires separately reviewed
+`production_mode=true` and `worm_locked=true`. The lock and KMS key protection are irreversible. Roll back the API/UI by applying prior immutable digests; the corpus and ledger remain
 unaffected. Do not roll Terraform state back or destroy the KMS key. If ingestion evidence is bad,
 stop the scheduler/refresh job first and withdraw or correct the publisher-owned control registry.

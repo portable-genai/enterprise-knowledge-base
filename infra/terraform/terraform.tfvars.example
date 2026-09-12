@@ -13,11 +13,16 @@ allowed_regions = ["asia-southeast1"]
 region          = "asia-southeast1"
 zone            = "asia-southeast1-a"
 
-# ~7-year WORM retention for the audit log (P-08). The lock is irreversible, so the
-# checked-in demo posture is recoverable. A named production approval flips BOTH values.
-retention_days   = 2557
-production_mode  = false
-lock_worm_bucket = false
+# WORM audit lock (P-08). NO default: every deployment names it, because an irreversible control
+# must never arrive because a file said nothing. true is the compliant production posture shown
+# here and is IRREVERSIBLE for the retention window; the ~7-year floor binds only when locked.
+# A reference or evaluation stack states worm_locked = false with its reason and may keep a short
+# retention_days; the bucket then stays destroyable and is NOT WORM. production_mode additionally
+# requires the lock, enforcing VPC-SC and the reviewed Provisioned Throughput order; it stays
+# false here because this example keeps the perimeter in dry run.
+worm_locked     = true
+retention_days  = 2557
+production_mode = false
 
 # Org / Access Context Manager. access_policy_id is the numeric policy id.
 org_id           = "123456789012"

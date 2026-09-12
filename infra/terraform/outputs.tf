@@ -72,7 +72,7 @@ output "migration_service_account" {
 
 # ------------------------------- WORM logging ------------------------------- #
 output "log_bucket" {
-  description = "Locked WORM audit log bucket id (settings.yaml logging.bucket)."
+  description = "WORM audit log bucket id, locked when worm_locked = true (settings.yaml logging.bucket)."
   value       = google_logging_project_bucket_config.worm_audit.id
 }
 

@@ -245,7 +245,7 @@ flowchart LR
     CTRL["Registry/ACL control bucket: publisher writer, pipeline viewer"]
     GCS["Redacted output bucket: pipeline writer"]
     ADB["AlloyDB (private): FTS, ACL, chunks and freshness"]
-    LOG["Cloud Logging WORM bucket (locked, 7y)"]
+    LOG["Cloud Logging WORM bucket (7y; production locks it)"]
     KMS["Cloud KMS regional CMEK"]
     JOB["Cloud Run job: freshness refresh"]
   end

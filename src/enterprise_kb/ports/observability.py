@@ -1,6 +1,7 @@
 """Observability ports : the A5 (audit/trace) and A4 (eval gate) concerns.
 
-Primary GCP adapters: **Cloud Logging locked WORM bucket** for immutable audit,
+Primary GCP adapters: the **Cloud Logging WORM bucket** for immutable audit, locked by a
+production deployment (``worm_locked`` has no default, so every deployment states it),
 **Cloud Trace via OpenTelemetry** for reasoning-loop traces (message content capture
 OFF so PII never reaches a span), and the **Gen AI evaluation service** for the
 in-repo promotion gate (retrieval recall, ACL correctness, citation accuracy, safety).

@@ -9,7 +9,7 @@ that reaches the LLM and every response that leaves it is, once more,
      so PII never reaches the model or any log/span, and
   2. **screened** (Model Armor, via :class:`GuardrailPort`) for prompt injection,
      jailbreak, sensitive-data leakage and RAI categories, and
-  3. **audited** (Cloud Logging locked WORM bucket, via :class:`AuditSinkPort`)
+  3. **audited** (the Cloud Logging WORM bucket, via :class:`AuditSinkPort`)
      with an already-redacted record at agent turn end.
 
 The callbacks are built from a :class:`~enterprise_kb.config.Container`,

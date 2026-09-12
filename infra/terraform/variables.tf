@@ -58,13 +58,22 @@ variable "zone" {
 }
 
 variable "retention_days" {
-  description = "WORM audit-log retention in days. Default ~7 years. Lock is irreversible."
+  description = <<-EOT
+    WORM audit-log retention in days. Default ~7 years. The lock is irreversible.
+
+    The 2557-day governance floor (P-08) binds whenever worm_locked = true, which is the
+    production posture. It is NOT applied to an unlocked stack, where the retention policy is
+    removable by a project owner anyway and therefore evidences routing and coverage rather
+    than immutability. That lets a reference or evaluation deployment keep a short window
+    while it stays destroyable, without weakening what a production deployment gets: turning
+    the lock on re-imposes the floor at plan time.
+  EOT
   type        = number
   default     = 2557 # ~7 years; mirrors config/settings.yaml logging.retention_days
 
   validation {
-    condition     = var.retention_days >= 2557
-    error_message = "Governance retention must be at least 2557 days (~7 years) (P-08)."
+    condition     = var.worm_locked ? var.retention_days >= 2557 : var.retention_days >= 1
+    error_message = "A LOCKED stack must retain at least 2557 days (~7 years) (P-08); an unlocked stack must still retain at least 1 day."
   }
 }
 
@@ -74,10 +83,29 @@ variable "production_mode" {
   default     = false
 }
 
-variable "lock_worm_bucket" {
-  description = "Irreversibly lock the audit bucket for retention_days. Explicitly confirm only for production."
+variable "worm_locked" {
   type        = bool
-  default     = false
+  description = <<-EOT
+    Lock the enterprise-knowledge-base-worm audit bucket (P-08).
+
+    #########################################################################
+    # WARNING: LOCKING IS IRREVERSIBLE. With true, the bucket and its       #
+    # retention window can NEVER be reduced or deleted until every entry    #
+    # ages out (retention_days), not even with project-owner rights.        #
+    #########################################################################
+
+    NO DEFAULT, and that is the decision. An irreversible control must never arrive because a
+    deployment said nothing, so there is no default of true. A fork running this as a system
+    of record must not quietly lose the WORM guarantee either, so there is no default of false.
+    Every plan names it. (This was lock_worm_bucket, defaulting to false; the fleet has one
+    name for the control so one deployment tfvars states it the same way in every stack.)
+
+    true is the compliant production posture, and production_mode refuses without it. false
+    keeps the bucket, its retention and its sink, and leaves the bucket destroyable: an
+    evaluation or reference posture, NOT WORM, and the deployment tfvars says why.
+    Setting false against a bucket that is ALREADY locked does not unlock it; the API refuses.
+    This governs the first apply.
+  EOT
 }
 
 variable "org_id" {

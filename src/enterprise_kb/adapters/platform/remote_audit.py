@@ -1,7 +1,7 @@
 """Remote-platform audit adapter — thin HTTP client to A5.
 
 In the full platform deployment, immutable audit records are written through the shared
-``agent-observability`` service (WORM Cloud Logging locked bucket + Cloud Trace +
+``agent-observability`` service (Cloud Logging WORM bucket + Cloud Trace +
 FinOps) instead of A2 calling Cloud Logging directly. This adapter implements
 :class:`AuditSinkPort` by POSTing the already-redacted :class:`AuditEvent` to the
 observability service's ``/v1/audit`` endpoint, which returns ``202 Accepted`` (SPEC §6,
