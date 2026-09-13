@@ -131,6 +131,7 @@ resource "google_project_iam_member" "audit_sink_bucket_writer" {
 # DATA_WRITE are on by default; we add DATA_READ explicitly.
 # --------------------------------------------------------------------------- #
 resource "google_project_iam_audit_config" "data_access" {
+  count   = var.manage_audit_config ? 1 : 0
   project = var.project_id
   service = "allServices"
 
