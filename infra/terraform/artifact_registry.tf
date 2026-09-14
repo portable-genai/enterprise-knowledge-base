@@ -6,7 +6,7 @@ resource "google_artifact_registry_repository" "images" {
   repository_id = "enterprise-knowledge-base"
   description   = "Immutable Enterprise KB API, UI and refresh images"
   format        = "DOCKER"
-  kms_key_name  = google_kms_crypto_key.kb.id
+  kms_key_name  = one(google_kms_crypto_key.kb[*].id)
 
   cleanup_policy_dry_run = true
 
