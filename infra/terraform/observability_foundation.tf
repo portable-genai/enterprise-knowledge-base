@@ -8,7 +8,7 @@ data "external" "observability_foundation" {
   query = {
     project_id   = var.project_id
     region       = var.region
-    kms_key_name = google_kms_crypto_key.kb.id
+    kms_key_name = one(google_kms_crypto_key.kb[*].id)
   }
 
   depends_on = [
@@ -26,8 +26,11 @@ resource "terraform_data" "observability_foundation" {
       error_message = "Observability default storage must be var.region before Cloud Trace can be enabled."
     }
     precondition {
-      condition     = data.external.observability_foundation.result.default_kms_key == google_kms_crypto_key.kb.id
-      error_message = "Observability defaults must use the reviewed regional CMEK."
+      # Reconciled only when this stack holds a key. With cmek_enabled false there is no
+      # reviewed key for the project's observability defaults to match, and the default
+      # Google-managed encryption is the stated posture rather than a drift.
+      condition     = !var.cmek_enabled || data.external.observability_foundation.result.default_kms_key == one(google_kms_crypto_key.kb[*].id)
+      error_message = "Observability defaults must use the reviewed regional CMEK while cmek_enabled is true."
     }
     precondition {
       condition = (
@@ -35,7 +38,7 @@ resource "terraform_data" "observability_foundation" {
         (
           data.external.observability_foundation.result.trace_bucket_count == "1" &&
           data.external.observability_foundation.result.trace_bucket_location == var.region &&
-          data.external.observability_foundation.result.trace_bucket_kms_key == google_kms_crypto_key.kb.id
+          data.external.observability_foundation.result.trace_bucket_kms_key == one(google_kms_crypto_key.kb[*].id)
         )
       )
       error_message = "An existing _Trace bucket must be the singleton in-region bucket encrypted by the reviewed CMEK."

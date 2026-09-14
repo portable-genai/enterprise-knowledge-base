@@ -10,6 +10,7 @@
 #         global/multi-region key. Regional CMEK is what pins crypto material in-country.
 
 resource "google_kms_key_ring" "kb" {
+  count    = var.cmek_enabled ? 1 : 0
   name     = "enterprise-knowledge-base-ring"
   location = var.region # asia-southeast1 : regional, in-country key material (P-03)
 
@@ -17,8 +18,9 @@ resource "google_kms_key_ring" "kb" {
 }
 
 resource "google_kms_crypto_key" "kb" {
+  count    = var.cmek_enabled ? 1 : 0
   name     = "enterprise-knowledge-base-cmek"
-  key_ring = google_kms_key_ring.kb.id
+  key_ring = one(google_kms_key_ring.kb[*].id)
 
   purpose         = "ENCRYPT_DECRYPT"
   rotation_period = "7776000s" # 90 days : periodic rotation for key hygiene
@@ -108,28 +110,32 @@ resource "terraform_data" "logging_cmek_identity" {
 }
 
 resource "google_kms_crypto_key_iam_member" "artifact_registry" {
-  crypto_key_id = google_kms_crypto_key.kb.id
+  count         = var.cmek_enabled ? 1 : 0
+  crypto_key_id = one(google_kms_crypto_key.kb[*].id)
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${google_project_service_identity.artifact_registry.email}"
 }
 
 # AlloyDB service agent.
 resource "google_kms_crypto_key_iam_member" "alloydb" {
-  crypto_key_id = google_kms_crypto_key.kb.id
+  count         = var.cmek_enabled ? 1 : 0
+  crypto_key_id = one(google_kms_crypto_key.kb[*].id)
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${google_project_service_identity.alloydb.email}"
 }
 
 # Cloud Storage service agent (CMEK on the corpus bucket).
 resource "google_kms_crypto_key_iam_member" "storage" {
-  crypto_key_id = google_kms_crypto_key.kb.id
+  count         = var.cmek_enabled ? 1 : 0
+  crypto_key_id = one(google_kms_crypto_key.kb[*].id)
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${data.google_storage_project_service_account.storage.email_address}"
 }
 
 # Cloud Logging service agent (CMEK on the WORM bucket).
 resource "google_kms_crypto_key_iam_member" "logging" {
-  crypto_key_id = google_kms_crypto_key.kb.id
+  count         = var.cmek_enabled ? 1 : 0
+  crypto_key_id = one(google_kms_crypto_key.kb[*].id)
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${data.google_logging_project_cmek_settings.logging.service_account_id}"
 
@@ -138,14 +144,16 @@ resource "google_kms_crypto_key_iam_member" "logging" {
 
 # Cloud Run service agent encrypts API revisions with the regional key.
 resource "google_kms_crypto_key_iam_member" "cloud_run" {
-  crypto_key_id = google_kms_crypto_key.kb.id
+  count         = var.cmek_enabled ? 1 : 0
+  crypto_key_id = one(google_kms_crypto_key.kb[*].id)
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${google_project_service_identity.cloud_run.email}"
 }
 
 # The system-created _Trace bucket uses the Observability service identity, not the Trace writer.
 resource "google_kms_crypto_key_iam_member" "observability" {
-  crypto_key_id = google_kms_crypto_key.kb.id
+  count         = var.cmek_enabled ? 1 : 0
+  crypto_key_id = one(google_kms_crypto_key.kb[*].id)
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   member        = "serviceAccount:${google_project_service_identity.observability.email}"
 }

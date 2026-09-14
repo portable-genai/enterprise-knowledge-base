@@ -34,7 +34,7 @@ resource "google_cloud_run_v2_job" "freshness_refresh" {
 
     template {
       service_account = google_service_account.pipeline.email
-      encryption_key  = google_kms_crypto_key.kb.id
+      encryption_key  = one(google_kms_crypto_key.kb[*].id)
 
       containers {
         # Placeholder image; CI publishes the real one to Artifact Registry in-region.

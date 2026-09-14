@@ -15,7 +15,7 @@ def test_system_logging_buckets_are_imported_only_from_singapore_and_cmek_reconc
     assert logging.count('id = "projects/${var.project_id}/locations/${var.region}/buckets/') == 2
     assert 'bucket_id = "_Default"' in logging
     assert 'bucket_id = "_Required"' in logging
-    assert logging.count("kms_key_name = google_kms_crypto_key.kb.id") >= 3
+    assert logging.count("kms_key_name = one(google_kms_crypto_key.kb[*].id)") >= 3
     assert 'resource "google_logging_project_exclusion" "governed_audit_from_default"' in logging
     assert (
         'logName=\\"projects/${var.project_id}/logs/enterprise-knowledge-base-audit\\"' in logging
@@ -32,7 +32,7 @@ def test_trace_defaults_and_effective_bucket_are_plan_apply_blocking() -> None:
     assert 'data "external" "observability_foundation"' in foundation
     assert "check_managed_observability_foundation.sh" in foundation
     assert "default_storage_location == var.region" in foundation
-    assert "default_kms_key == google_kms_crypto_key.kb.id" in foundation
+    assert "default_kms_key == one(google_kms_crypto_key.kb[*].id)" in foundation
     assert 'trace_bucket_count == "1"' in foundation
     assert "!var.production_mode" in foundation
     assert "gcloud beta observability settings describe" in script

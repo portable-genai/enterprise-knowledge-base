@@ -16,7 +16,7 @@ locals {
     KB_PROFILE              = "gcp"
     KB_REGION               = var.region
     GOOGLE_CLOUD_PROJECT    = var.project_id
-    KB_KMS_KEY              = google_kms_crypto_key.kb.id
+    KB_KMS_KEY              = one(google_kms_crypto_key.kb[*].id)
     KB_CORPUS_BUCKET        = google_storage_bucket.corpus.name
     KB_CORPUS_REGISTRY      = var.corpus_registry_uri
     KB_ALLOYDB_URI          = google_alloydb_instance.primary.name
@@ -243,7 +243,7 @@ resource "google_cloud_run_v2_service" "api" {
 
   template {
     service_account = google_service_account.app.email
-    encryption_key  = google_kms_crypto_key.kb.id
+    encryption_key  = one(google_kms_crypto_key.kb[*].id)
     timeout         = "60s"
 
     scaling {
@@ -351,7 +351,7 @@ resource "google_cloud_run_v2_service" "ui" {
 
   template {
     service_account = google_service_account.ui.email
-    encryption_key  = google_kms_crypto_key.kb.id
+    encryption_key  = one(google_kms_crypto_key.kb[*].id)
     timeout         = "30s"
     scaling {
       min_instance_count = 1

@@ -31,8 +31,11 @@ resource "google_logging_project_bucket_config" "default" {
   location  = var.region
   bucket_id = "_Default"
 
-  cmek_settings {
-    kms_key_name = google_kms_crypto_key.kb.id
+  dynamic "cmek_settings" {
+    for_each = var.cmek_enabled ? [1] : []
+    content {
+      kms_key_name = one(google_kms_crypto_key.kb[*].id)
+    }
   }
 
   depends_on = [google_kms_crypto_key_iam_member.logging]
@@ -43,8 +46,11 @@ resource "google_logging_project_bucket_config" "required" {
   location  = var.region
   bucket_id = "_Required"
 
-  cmek_settings {
-    kms_key_name = google_kms_crypto_key.kb.id
+  dynamic "cmek_settings" {
+    for_each = var.cmek_enabled ? [1] : []
+    content {
+      kms_key_name = one(google_kms_crypto_key.kb[*].id)
+    }
   }
 
   depends_on = [google_kms_crypto_key_iam_member.logging]
@@ -77,8 +83,11 @@ resource "google_logging_project_bucket_config" "worm_audit" {
   }
 
   # CMEK on the log bucket (P-09) : explicit, does not cascade.
-  cmek_settings {
-    kms_key_name = google_kms_crypto_key.kb.id
+  dynamic "cmek_settings" {
+    for_each = var.cmek_enabled ? [1] : []
+    content {
+      kms_key_name = one(google_kms_crypto_key.kb[*].id)
+    }
   }
 
   depends_on = [
