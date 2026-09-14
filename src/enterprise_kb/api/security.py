@@ -39,7 +39,7 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
-from hex_service_kit.federation import IAP_ASSERTION_HEADER
+from hex_service_kit.federation import select_assertion
 from hex_service_kit.web import make_require_service_caller
 
 from ..domain.identity import IdentityError, Principal, RequestContext
@@ -123,7 +123,23 @@ def require_service_caller(request: Request) -> None:
     """
     choice = deps.get_settings().choice
     authorization = request.headers.get("authorization", "").strip()
-    iap_assertion = request.headers.get(IAP_ASSERTION_HEADER, "").strip()
+    # BOTH names an assertion can arrive under, through the commons selection function. Reading
+    # `x-goog-iap-jwt-assertion` alone was the same defect the identity adapter carried, in a
+    # second file: Google reserves that namespace and the serverless frontend strips it from a
+    # request entering a service, so a browser reaching this service THROUGH the portal never
+    # presents it. The waiver below therefore never fired for an embedded browser session, and
+    # the request fell through to the service-caller check and was refused 401 -- a browser that
+    # cannot mint a service-account bearer token being told to present one.
+    #
+    # `select_assertion` raises when neither name carries a value, which here is not a refusal:
+    # a request with no assertion at all is simply not on the browser path, and the ordinary
+    # service-caller check below is the right answer for it.
+    try:
+        iap_assertion = select_assertion(
+            {name.lower(): value for name, value in request.headers.items()}
+        ).assertion
+    except IdentityError:
+        iap_assertion = ""
 
     # The exact IAP-fronted browser path carries a verified end-user assertion but cannot mint
     # a service-account OIDC bearer. Governed routes also require CurrentPrincipal, which verifies
