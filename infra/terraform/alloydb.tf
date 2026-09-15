@@ -73,16 +73,22 @@ resource "google_alloydb_cluster" "kb" {
   }
 
   # CMEK : explicit regional key (P-09). Does not cascade from any other resource.
-  encryption_config {
-    kms_key_name = google_kms_crypto_key.kb.id
+  dynamic "encryption_config" {
+    for_each = var.cmek_enabled ? [1] : []
+    content {
+      kms_key_name = one(google_kms_crypto_key.kb[*].id)
+    }
   }
 
   # Continuous backup, also CMEK-protected, kept in-region.
   continuous_backup_config {
     enabled              = true
     recovery_window_days = 14
-    encryption_config {
-      kms_key_name = google_kms_crypto_key.kb.id
+    dynamic "encryption_config" {
+      for_each = var.cmek_enabled ? [1] : []
+      content {
+        kms_key_name = one(google_kms_crypto_key.kb[*].id)
+      }
     }
   }
 

@@ -20,8 +20,11 @@ resource "google_storage_bucket" "corpus" {
   public_access_prevention    = "enforced"
 
   # CMEK on the bucket (P-09) : explicit, does not cascade.
-  encryption {
-    default_kms_key_name = google_kms_crypto_key.kb.id
+  dynamic "encryption" {
+    for_each = var.cmek_enabled ? [1] : []
+    content {
+      default_kms_key_name = one(google_kms_crypto_key.kb[*].id)
+    }
   }
 
   # Keep prior versions so an accidental overwrite of a redacted document is recoverable.
@@ -55,8 +58,11 @@ resource "google_storage_bucket" "raw_sources" {
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
 
-  encryption {
-    default_kms_key_name = google_kms_crypto_key.kb.id
+  dynamic "encryption" {
+    for_each = var.cmek_enabled ? [1] : []
+    content {
+      default_kms_key_name = one(google_kms_crypto_key.kb[*].id)
+    }
   }
 
   versioning {
@@ -88,8 +94,11 @@ resource "google_storage_bucket" "control_inputs" {
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
 
-  encryption {
-    default_kms_key_name = google_kms_crypto_key.kb.id
+  dynamic "encryption" {
+    for_each = var.cmek_enabled ? [1] : []
+    content {
+      default_kms_key_name = one(google_kms_crypto_key.kb[*].id)
+    }
   }
 
   versioning {

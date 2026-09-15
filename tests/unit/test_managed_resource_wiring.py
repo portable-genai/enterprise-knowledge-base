@@ -32,7 +32,7 @@ def test_refresh_job_has_private_network_path_and_immutable_image_contract() -> 
     assert "@sha256:" in variables
     assert ":latest" not in scheduler
     assert "ignore_changes" not in scheduler
-    assert "encryption_key  = google_kms_crypto_key.kb.id" in scheduler
+    assert "encryption_key  = one(google_kms_crypto_key.kb[*].id)" in scheduler
     assert "google_kms_crypto_key_iam_member.cloud_run" in scheduler
 
 
@@ -158,7 +158,7 @@ def test_regional_artifact_repository_owns_all_immutable_image_inputs() -> None:
     assert 'resource "google_artifact_registry_repository" "images"' in artifact
     assert "location      = var.region" in artifact
     assert 'format        = "DOCKER"' in artifact
-    assert "kms_key_name  = google_kms_crypto_key.kb.id" in artifact
+    assert "kms_key_name  = one(google_kms_crypto_key.kb[*].id)" in artifact
     assert "google_kms_crypto_key_iam_member.artifact_registry" in artifact
     assert 'role       = "roles/artifactregistry.writer"' in artifact
     kms = (ROOT / "infra/terraform/kms.tf").read_text(encoding="utf-8")

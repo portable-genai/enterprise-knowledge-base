@@ -46,7 +46,7 @@ output "artifact_registry_repository" {
 # --------------------------------- KMS -------------------------------------- #
 output "kms_key" {
   description = "Regional CMEK crypto key id (settings.yaml kms_key / KB_KMS_KEY)."
-  value       = google_kms_crypto_key.kb.id
+  value       = one(google_kms_crypto_key.kb[*].id)
 }
 
 # --------------------------------- AlloyDB ---------------------------------- #
