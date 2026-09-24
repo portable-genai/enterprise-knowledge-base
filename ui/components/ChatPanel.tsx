@@ -15,7 +15,7 @@ export function ChatPanel({
   onPassages,
   onAnswer,
 }: {
-  onPassages: (p: RetrievedPassage[]) => void;
+  onPassages: (p: RetrievedPassage[], inputRedacted: boolean) => void;
   onAnswer: (a: GroundedAnswer) => void;
 }) {
   const [mode, setMode] = useState<Mode>("answer");
@@ -36,7 +36,7 @@ export function ChatPanel({
     try {
       if (mode === "search") {
         const res = await api.search({ query, acl_principals });
-        onPassages(res.passages);
+        onPassages(res.passages, res.input_redacted === true);
       } else {
         const res = await api.answer({ query, acl_principals });
         onAnswer(res);

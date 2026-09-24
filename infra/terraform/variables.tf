@@ -398,3 +398,15 @@ variable "cmek_enabled" {
     the right answer: the stores it bound stay bound.
   EOT
 }
+
+variable "guardrail_enabled" {
+  description = "Switch the input and output guardrail (KB_GUARDRAIL) on the API and the refresh job. A cheap runtime control: on in the reference, reversible, so it takes a default."
+  type        = bool
+  default     = true
+}
+
+variable "pii_redaction_enabled" {
+  description = "Switch PII redaction (KB_PII_REDACTION) on the API and the refresh job. A cheap runtime control: on in the reference, reversible, so it takes a default."
+  type        = bool
+  default     = true
+}

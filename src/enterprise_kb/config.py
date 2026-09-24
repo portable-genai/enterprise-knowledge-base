@@ -14,8 +14,10 @@ other module re-derives it with its own permissive default.
 
 from __future__ import annotations
 
+import functools
 import importlib
 import json
+import logging
 import os
 import re
 from collections.abc import Mapping
@@ -27,7 +29,7 @@ from typing import Any
 import yaml
 
 from .domain.policy import KbPolicy
-from .envread import ConfiguredEmptyError, read_env_setting, setting_or_default
+from .envread import ConfiguredEmptyError, boolean_setting, read_env_setting, setting_or_default
 
 _ENV_PATTERN = re.compile(r"\$\{([A-Z0-9_]+)(?::-(.*?))?\}")
 
@@ -203,6 +205,36 @@ class AlloyDBSettings:
     acl_table: str = "principal_acl_tags"
 
 
+#: The environment variables that switch each cheap runtime control this service has, read in
+#: three states: unset is ON (the reference posture keeps cheap controls on), a boolean value
+#: wins, and an emptied or unrecognised value refuses at boot. There is no review router here,
+#: so there is no routing switch. See the fleet's runtime-control contract.
+GUARDRAIL_ENV = "KB_GUARDRAIL"
+PII_REDACTION_ENV = "KB_PII_REDACTION"
+
+_log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class ControlSwitches:
+    """Which cheap runtime controls this process runs. Every one defaults on."""
+
+    guardrail: bool = True
+    pii_redaction: bool = True
+
+    @classmethod
+    def from_env(cls) -> ControlSwitches:
+        return cls(
+            guardrail=boolean_setting(GUARDRAIL_ENV, default=True),
+            pii_redaction=boolean_setting(PII_REDACTION_ENV, default=True),
+        )
+
+    def switched_off(self) -> tuple[str, ...]:
+        """The environment variables of every control that is off, for the startup warning."""
+        states = ((GUARDRAIL_ENV, self.guardrail), (PII_REDACTION_ENV, self.pii_redaction))
+        return tuple(name for name, on in states if not on)
+
+
 @dataclass(frozen=True)
 class ModelArmorSettings:
     template_id: str = ""
@@ -293,6 +325,8 @@ class Settings:
     storage: StorageSettings = field(default_factory=StorageSettings)
     alloydb: AlloyDBSettings = field(default_factory=AlloyDBSettings)
     model_armor: ModelArmorSettings = field(default_factory=ModelArmorSettings)
+    # Which cheap runtime controls run; environment-only, read at load. See ControlSwitches.
+    controls: ControlSwitches = field(default_factory=ControlSwitches)
     logging: LoggingSettings = field(default_factory=LoggingSettings)
     agent_engine: AgentEngineSettings = field(default_factory=AgentEngineSettings)
     corpus: CorpusSettings = field(default_factory=CorpusSettings)
@@ -390,6 +424,7 @@ class Settings:
         # ``profile_explicit`` is DERIVED, never configured: a settings file that could set it
         # would be able to forge consent, which is the whole point of the resolution above.
         raw.pop("profile_explicit", None)
+        raw.pop("controls", None)  # the switches are environment-only, read below
         known = {f for f in Settings.__dataclass_fields__ if f not in nested}
         flat: dict[str, Any] = {k: v for k, v in raw.items() if k in known}
         if "grounding_enabled" in flat:
@@ -397,10 +432,37 @@ class Settings:
                 flat["grounding_enabled"], name="KB_GROUNDING_ENABLED"
             )
         settings = Settings(
-            profile=choice.profile, profile_explicit=choice.explicit, **flat, **nested
+            profile=choice.profile,
+            profile_explicit=choice.explicit,
+            controls=ControlSwitches.from_env(),
+            **flat,
+            **nested,
         )
         _validate_residency(settings)
+        _refuse_unconfigured_controls(settings)
         return settings
+
+
+def _refuse_unconfigured_controls(settings: Settings) -> None:
+    """A guardrail that is on under a managed profile must be able to work, checked at boot.
+
+    The Model Armor adapter builds its URL from the template id, so an empty one used to
+    surface as a malformed request on the first screen. That is a configuration error: it
+    refuses here and says how to either name the template or switch the guardrail off.
+    """
+    if settings.profile not in _MANAGED_PROFILES:
+        return
+    guardrail_binding = settings.adapters.get("guardrail", {}).get(settings.profile, "")
+    if (
+        settings.controls.guardrail
+        and "model_armor" in guardrail_binding
+        and not settings.model_armor.template_id.strip()
+    ):
+        raise ConfiguredEmptyError(
+            f"The guardrail is on under profile {settings.profile!r} but no Model Armor "
+            f"template is configured (KB_MODEL_ARMOR_TEMPLATE). Name one, or set "
+            f"{GUARDRAIL_ENV}=off."
+        )
 
 
 def _csv_tuple(value: Any) -> tuple[str, ...]:
@@ -534,10 +596,18 @@ class Container:
 
     @cached_property
     def guardrail(self) -> Any:
+        if not self.settings.controls.guardrail:
+            from .adapters.controls import DisabledGuardrail
+
+            return DisabledGuardrail(self.settings)
         return self._bind("guardrail")
 
     @cached_property
     def redaction(self) -> Any:
+        if not self.settings.controls.pii_redaction:
+            from .adapters.controls import DisabledRedaction
+
+            return DisabledRedaction(self.settings)
         return self._bind("redaction")
 
     @cached_property
@@ -577,8 +647,18 @@ class Container:
         return self._bind("identity")
 
 
+@functools.cache
+def warn_switched_off(switched_off: tuple[str, ...]) -> None:
+    """Log a switched-off posture once per process, however many containers are built."""
+    _log.warning("runtime controls switched off: %s", ", ".join(switched_off))
+
+
 def build_container(settings: Settings | None = None) -> Container:
-    return Container(settings or Settings.load())
+    settings = settings or Settings.load()
+    switched_off = settings.controls.switched_off()
+    if switched_off:
+        warn_switched_off(switched_off)
+    return Container(settings)
 
 
 def identity_adapter_class(settings: Settings) -> type:

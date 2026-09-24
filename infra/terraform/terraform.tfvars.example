@@ -60,3 +60,7 @@ gemini_single_zone_pt_confirmed = false
 # denies nothing. Flip vpc_sc_dry_run to false only after the dry-run audit log is clean.
 enable_vpc_sc  = true
 vpc_sc_dry_run = true
+
+# Cheap runtime controls stay on in the reference; say so rather than inheriting the default.
+guardrail_enabled     = true
+pii_redaction_enabled = true

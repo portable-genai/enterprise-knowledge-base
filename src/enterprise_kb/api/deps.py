@@ -14,7 +14,11 @@ ports each service needs.
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated, Any
 
+from fastapi import Depends
+
+from ..adapters.controls import DisclosingRedaction
 from ..config import Container, Settings, build_container
 from ..domain.freshness_policy import FreshnessPolicy
 from ..domain.hitl import KbReviewPolicy
@@ -39,9 +43,23 @@ def get_settings() -> Settings:
 # --------------------------------------------------------------------------- #
 
 
-def get_kb_service() -> KnowledgeBaseService:
+def get_request_redaction() -> DisclosingRedaction:
+    """The redaction adapter for ONE request, wrapped so the response can disclose a change.
+
+    FastAPI resolves a dependency once per request, so the route and the service it builds
+    receive the same wrapper and the route reads what the service's redaction did.
+    """
+    return DisclosingRedaction(get_container().redaction)
+
+
+#: Injected by FastAPI; ``None`` when a getter is called directly (the MCP server and the agent
+#: do), which binds the container's adapter unwrapped.
+RequestRedaction = Annotated[DisclosingRedaction | None, Depends(get_request_redaction)]
+
+
+def get_kb_service(redaction: RequestRedaction = None) -> KnowledgeBaseService:
     """KnowledgeBaseService(retrieval, access_control, guardrail, redaction, llm, tracer, audit)."""
-    return build_kb_service(get_container())
+    return build_kb_service(get_container(), redaction=redaction)
 
 
 def get_ingestion_service() -> IngestionService:
@@ -58,7 +76,7 @@ def get_retraction_policy() -> RetractionPolicy:
     return get_container().settings.policy.retraction_policy()
 
 
-def build_kb_service(container: Container) -> KnowledgeBaseService:
+def build_kb_service(container: Container, *, redaction: Any = None) -> KnowledgeBaseService:
     """Assemble a :class:`KnowledgeBaseService` from an explicit Container.
 
     The maker-checker thresholds and the grounding rules come from the bank-owned
@@ -69,7 +87,7 @@ def build_kb_service(container: Container) -> KnowledgeBaseService:
         retrieval=container.retrieval,
         access_control=container.access_control,
         guardrail=container.guardrail,
-        redaction=container.redaction,
+        redaction=redaction or container.redaction,
         llm=container.llm,
         tracer=container.tracer,
         audit=container.audit,

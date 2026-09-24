@@ -6,9 +6,9 @@ the boundary — before it reaches a model or the WORM audit sink — so PII is 
 to the model (P-04). The call is regional (``projects/{project}/locations/{region}``)
 to keep inspection inside Singapore for sovereign data residency.
 
-The adapter builds an inline configuration that masks the DLP built-in info
-types most relevant to APAC banking (names, emails, phone numbers, card numbers, IBANs)
-plus the national-identifier custom info types of the CONFIGURED jurisdictions
+The adapter builds an inline configuration that replaces, with the info-type name, the
+DLP built-in info types most relevant to APAC banking (names, emails, phone numbers, card
+numbers, IBANs) plus the national-identifier custom info types of the CONFIGURED jurisdictions
 (``pii.jurisdictions``), taken from the shared pack via
 :mod:`enterprise_kb.pii_patterns` in its RE2-safe form (C4). The jurisdictions are the
 same ones the local redactor and the eval ``pii_safety`` metric use, so the managed and
@@ -36,7 +36,39 @@ _DEFAULT_INFO_TYPES: tuple[str, ...] = (
     "IBAN_CODE",
 )
 
-_MASKING_CHAR = "#"
+# Tuned against false positives (runtime-control contract, 2026-09-24). A knowledge-base
+# question names regulators, instruments, document types and the bank's own policy titles, and
+# at POSSIBLE likelihood DLP could take "Monetary Authority" or "Incident Response Runbook" for
+# a person and mask it, so the model answered a question the user did not ask. Three changes:
+# only LIKELY findings are masked; a match is REPLACED with its info-type name rather than a
+# run of mask characters, so the model still reads the shape of the question; and a
+# PERSON_NAME finding containing this domain's own vocabulary is excluded.
+_MIN_LIKELIHOOD = "LIKELY"
+_DOMAIN_VOCABULARY_REGEX = (
+    r"(?i)\b(MAS|HKMA|APRA|BCBS|FATF|PDPC|PDPA|Basel|Monetary Authority|Notice|Circular|"
+    r"Guidelines?|Policy|Standard|Procedure|Runbook|Playbook|Framework|Charter|"
+    r"Code of Conduct|Handbook|Manual|Register|Committee|Board|Group|Bank|Pte|Ltd|"
+    r"Limited|CPS|CPG|SPM|TRM|DORA|NIST|ISO)\b"
+)
+# Eight digits after a currency marker are an amount, not a Singapore phone number. RE2 has no
+# lookbehind, so the managed path lowers such a finding with a hotword rule instead of the
+# local regex's lookbehind (enterprise_kb.pii_patterns).
+_AMOUNT_HOTWORD_REGEX = r"(SGD|USD|HKD|AUD|JPY|EUR|GBP|CNY|\$)"
+
+# The mask characters. The redaction is still computed as a length-preserving CHARACTER mask,
+# because a long document is inspected in chunks plus the context around every chunk boundary
+# and the results are merged position by position (see ``redact``). Each info type gets its
+# OWN mask character, so once the merge is done every masked run can be relabelled with the
+# name of what it was, "[PERSON_NAME]" rather than "##########". A position counts as masked
+# only where the result differs from the original text, so a "#" the author wrote stays a "#".
+_BUILTIN_MASKS: dict[str, str] = {
+    "PERSON_NAME": "#",
+    "EMAIL_ADDRESS": "~",
+    "PHONE_NUMBER": "*",
+    "CREDIT_CARD_NUMBER": "^",
+    "IBAN_CODE": "|",
+}
+_CUSTOM_MASK_POOL = "`<>{}=!?$%&;"
 # DLP accepts much larger content payloads, but a request can also hit its finding-count
 # ceiling long before the byte ceiling on dense financial identifiers. Eight KiB keeps
 # even tightly packed practical identifiers below 3,000 findings while retaining bounded
@@ -53,6 +85,9 @@ class DlpRedactionAdapter:
         self._parent = f"projects/{settings.project_id}/locations/{settings.region}"
         # National-identifier custom info types for the configured jurisdictions (C4).
         self._custom_info_types = re2_custom_info_types(settings.pii.jurisdictions)
+        self._masks = _mask_table(
+            [str(entry["info_type"]["name"]) for entry in self._custom_info_types]  # type: ignore[index]
+        )
         # DlpServiceClient is constructed lazily on first redact() call.
         self._client: Any | None = None
 
@@ -89,8 +124,9 @@ class DlpRedactionAdapter:
             bridge_redacted = str(response.item.value)
             if len(bridge_redacted) != len(bridge):
                 raise RuntimeError("DLP boundary redaction was not length-preserving")
+            mask_chars = set(self._masks.values())
             if any(
-                redacted not in {original, _MASKING_CHAR}
+                redacted != original and redacted not in mask_chars
                 for original, redacted in zip(bridge, bridge_redacted, strict=True)
             ):
                 raise RuntimeError("DLP boundary redaction returned an unexpected transformation")
@@ -98,13 +134,17 @@ class DlpRedactionAdapter:
             right_overlay = bridge_redacted[left_width:]
             previous = redacted_parts[index - 1]
             current = redacted_parts[index]
+            left_original = chunks[index - 1][-left_width:] if left_width else ""
+            right_original = chunks[index][:right_width]
             redacted_parts[index - 1] = (
-                previous[:-left_width] + _union_masks(previous[-left_width:], left_overlay)
+                previous[:-left_width]
+                + _union_masks(left_original, previous[-left_width:], left_overlay)
                 if left_width
                 else previous
             )
             redacted_parts[index] = (
-                _union_masks(current[:right_width], right_overlay) + current[right_width:]
+                _union_masks(right_original, current[:right_width], right_overlay)
+                + current[right_width:]
                 if right_width
                 else current
             )
@@ -115,7 +155,10 @@ class DlpRedactionAdapter:
             RedactionFinding(info_type=info_type, count=count)
             for info_type, count in sorted(counts.items())
         )
-        return RedactionResult(text="".join(redacted_parts), findings=findings)
+        masked = "".join(redacted_parts)
+        if len(masked) != len(text):
+            raise RuntimeError("DLP redaction was not length-preserving")
+        return RedactionResult(text=_label(text, masked, self._masks), findings=findings)
 
     # -- client / request -------------------------------------------------- #
     def _service_client(self) -> Any:
@@ -161,33 +204,58 @@ class DlpRedactionAdapter:
     def _inline_inspect_config(self) -> dict[str, Any]:
         # verify: https://cloud.google.com/dlp/docs/reference/rest/v2/InspectConfig
         info_types = [{"name": name} for name in _DEFAULT_INFO_TYPES]
+        rule_set: list[dict[str, Any]] = [
+            {
+                "info_types": [{"name": "PERSON_NAME"}],
+                "rules": [
+                    {
+                        "exclusion_rule": {
+                            "regex": {"pattern": _DOMAIN_VOCABULARY_REGEX},
+                            "matching_type": "MATCHING_TYPE_PARTIAL_MATCH",
+                        }
+                    }
+                ],
+            }
+        ]
+        custom_names = {str(e["info_type"]["name"]) for e in self._custom_info_types}  # type: ignore[index]
+        if "SG_PHONE" in custom_names:
+            rule_set.append(
+                {
+                    "info_types": [{"name": "SG_PHONE"}],
+                    "rules": [
+                        {
+                            "hotword_rule": {
+                                "hotword_regex": {"pattern": _AMOUNT_HOTWORD_REGEX},
+                                "proximity": {"window_before": 5},
+                                "likelihood_adjustment": {"fixed_likelihood": "VERY_UNLIKELY"},
+                            }
+                        }
+                    ],
+                }
+            )
         return {
             "info_types": info_types,
             "custom_info_types": list(self._custom_info_types),
-            "min_likelihood": "POSSIBLE",
+            "rule_set": rule_set,
+            "min_likelihood": _MIN_LIKELIHOOD,
             "include_quote": False,
         }
 
     def _inline_deidentify_config(self) -> dict[str, Any]:
-        # Mask every detected info type (built-in + the configured national custom
-        # types) with a single masking character — irreversible, no surrogate to reverse.
+        # One character mask per info type, each with its own mask character: irreversible,
+        # length-preserving (which the chunk-boundary merge needs), and relabelled with the
+        # info-type name once the merge is done.
         # verify: https://cloud.google.com/dlp/docs/reference/rest/v2/DeidentifyConfig
-        custom_names = [
-            {"name": str(entry["info_type"]["name"])}  # type: ignore[index]
-            for entry in self._custom_info_types
-        ]
-        all_info_types = [{"name": name} for name in _DEFAULT_INFO_TYPES] + custom_names
         return {
             "info_type_transformations": {
                 "transformations": [
                     {
-                        "info_types": all_info_types,
+                        "info_types": [{"name": info_type}],
                         "primitive_transformation": {
-                            "character_mask_config": {
-                                "masking_character": _MASKING_CHAR,
-                            }
+                            "character_mask_config": {"masking_character": mask}
                         },
                     }
+                    for info_type, mask in self._masks.items()
                 ]
             }
         }
@@ -262,11 +330,57 @@ def _safe_chunks(text: str, max_bytes: int = _MAX_DLP_CHUNK_BYTES) -> tuple[str,
     return tuple(chunks)
 
 
-def _union_masks(existing: str, overlay: str) -> str:
-    """Merge two same-length character-mask results without undoing an earlier redaction."""
-    if len(existing) != len(overlay):
+def _union_masks(original: str, existing: str, overlay: str) -> str:
+    """Merge two same-length character-mask results without undoing an earlier redaction.
+
+    A position is masked in a result where it differs from ``original``; an earlier mask wins,
+    so a character masked by either pass stays masked.
+    """
+    if not len(original) == len(existing) == len(overlay):
         raise RuntimeError("DLP boundary overlay length mismatch")
     return "".join(
-        _MASKING_CHAR if _MASKING_CHAR in {old, new} else old
-        for old, new in zip(existing, overlay, strict=True)
+        old if old != orig else new
+        for orig, old, new in zip(original, existing, overlay, strict=True)
     )
+
+
+def _mask_table(custom_info_types: list[str]) -> dict[str, str]:
+    """Each info type's mask character: built-ins fixed, national custom types from a pool."""
+    table = dict(_BUILTIN_MASKS)
+    pool = iter(_CUSTOM_MASK_POOL)
+    for info_type in custom_info_types:
+        if info_type in table:
+            continue
+        mask = next(pool, None)
+        if mask is None:
+            raise ValueError(
+                "more national info types are configured than there are mask characters; "
+                "extend _CUSTOM_MASK_POOL"
+            )
+        table[info_type] = mask
+    return table
+
+
+def _label(original: str, masked: str, masks: dict[str, str]) -> str:
+    """Replace every masked run with its info-type name: "[PERSON_NAME]", "[SG_NRIC_FIN]".
+
+    A position is masked where ``masked`` differs from ``original``; consecutive masked
+    positions carrying the same mask character are one finding.
+    """
+    names = {mask: info_type for info_type, mask in masks.items()}
+    out: list[str] = []
+    index = 0
+    while index < len(original):
+        char = masked[index]
+        if char == original[index]:
+            out.append(char)
+            index += 1
+            continue
+        if char not in names:
+            raise RuntimeError("DLP redaction returned an unexpected transformation")
+        end = index
+        while end < len(original) and masked[end] == char and masked[end] != original[end]:
+            end += 1
+        out.append(f"[{names[char]}]")
+        index = end
+    return "".join(out)

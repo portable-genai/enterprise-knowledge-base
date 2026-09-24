@@ -50,6 +50,7 @@ from ..managed_preflight import assert_managed_profile_ready
 from ..ports.identity import VERIFIED
 from . import deps
 from .contract import ANSWER_PATH, CONTRACT_MANIFEST_PATH, SEARCH_PATH, contract_manifest
+from .disclosure import disclose
 from .schemas import (
     AnswerRequest,
     AnswerResponse,
@@ -285,6 +286,7 @@ def search(
     request: SearchRequest,
     principal: CurrentPrincipal,
     service: Annotated[KnowledgeBaseService, Depends(deps.get_kb_service)],
+    redaction: deps.RequestRedaction = None,
 ) -> SearchResponse:
     """Return ACL-filtered, page-cited passages for a query.
 
@@ -302,7 +304,7 @@ def search(
         top_k=request.top_k,
         filters=request.filters,
     )
-    return SearchResponse.from_domain(passages)
+    return disclose(SearchResponse.from_domain(passages), request.query, redaction)
 
 
 @app.post(
@@ -315,6 +317,7 @@ def answer(
     request: AnswerRequest,
     principal: CurrentPrincipal,
     service: Annotated[KnowledgeBaseService, Depends(deps.get_kb_service)],
+    redaction: deps.RequestRedaction = None,
 ) -> AnswerResponse:
     """Synthesise a cited, ACL-grounded answer over the caller's permitted passages.
 
@@ -328,7 +331,7 @@ def answer(
         tenant=principal.tenant,
         filters=request.filters,
     )
-    return AnswerResponse.from_domain(result)
+    return disclose(AnswerResponse.from_domain(result), request.query, redaction)
 
 
 # --------------------------------------------------------------------------- #

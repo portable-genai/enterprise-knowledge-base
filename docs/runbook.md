@@ -116,6 +116,29 @@ Logging bucket (retention ~7 years; a production deployment locks it with `worm_
 message content capture is OFF, so no prompt, passage, or answer text ever lands on a span
 (P-04).
 
+## Runtime controls
+
+`KB_GUARDRAIL` and `KB_PII_REDACTION` each switch one cheap runtime control, on the API and on
+the refresh job alike, read in three states: unset is on, `true`/`false` (or `on`/`off`) wins,
+and an emptied or unrecognised value refuses at boot. Off binds a disabled adapter, and a
+process with any control off logs one warning at startup naming each. Terraform states them
+as `guardrail_enabled` and `pii_redaction_enabled`. There is no review router in this
+service, so there is no routing switch.
+
+- **Under `gcp` or `platform`, the guardrail on needs its Model Armor template.** With
+  `KB_MODEL_ARMOR_TEMPLATE` empty the process refuses to boot and says to name the template or
+  switch the guardrail off, rather than building a malformed Model Armor URL at the first
+  request.
+- **Redaction off means raw PII reaches retrieval, the model, the index and the audit trail.**
+  It is a stated deployment choice, never a way to debug a false positive; tune the pattern or
+  the DLP rule instead.
+- **The user is told.** A search or answer whose query redaction changed carries
+  `input_redacted: true`, and the console says personal data in the input was masked.
+- **Managed DLP** inspects at `LIKELY`, replaces each finding with its info-type name
+  (`[PERSON_NAME]`, `[SG_NRIC_FIN]`), and excludes this corpus's own vocabulary (regulators,
+  document types such as Policy, Standard and Runbook) from `PERSON_NAME`. An eight-digit
+  amount after a currency code is not a Singapore phone number on either path.
+
 ## Incident: suspected PII leak
 
 1. PII is redacted at every content boundary: ingest before storage/model use, query ingress,

@@ -2,13 +2,14 @@
 
 import type { GroundedAnswer } from "@/lib/types";
 import { CitationCard } from "./CitationCard";
-import { Card, ConfidenceMeter, HumanReviewBanner } from "./ui";
+import { Card, ConfidenceMeter, HumanReviewBanner, RedactionNotice } from "./ui";
 
 /** Renders a grounded answer from `/v1/answer` with provenance and the review gate. */
 export function AnswerView({ answer }: { answer: GroundedAnswer }) {
   return (
     <Card title="Grounded answer">
       <div className="space-y-3">
+        {answer.input_redacted ? <RedactionNotice answered /> : null}
         {answer.requires_human_review ? (
           <HumanReviewBanner
             level={answer.review_level}

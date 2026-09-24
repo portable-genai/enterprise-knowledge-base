@@ -22,6 +22,7 @@ application-specific; the rows, validators and RE2 forms belong to the package.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 
 from pii_kit import (
@@ -50,6 +51,21 @@ def mask_for(info_type: str) -> str:
     return _MASKS.get(info_type, f"[REDACTED:{info_type}]")
 
 
+#: An eight-digit run after a currency marker is an amount, not a Singapore phone number: a
+#: question about "a SGD 90000000 outsourcing contract" used to reach the model as
+#: "SGD [PHONE]". The shared pack's row has no context, so this repo prefixes it with fixed-width
+#: lookbehinds. The managed DLP path, which runs RE2 and cannot look behind, lowers the same
+#: finding with a hotword rule instead (adapters/gcp/dlp_redaction.py).
+_NOT_AN_AMOUNT = r"(?<![$€£¥])(?<![$€£¥]\s)(?<!(?:SGD|USD|HKD|AUD|JPY|EUR|GBP|CNY)\s)"
+
+
+def _not_an_amount(row: Pattern) -> Pattern:
+    info_type, pattern, validator = row
+    if info_type != "SG_PHONE":
+        return row
+    return (info_type, re.compile(_NOT_AN_AMOUNT + pattern.pattern, pattern.flags), validator)
+
+
 def patterns_for(jurisdictions: Iterable[str]) -> tuple[Pattern, ...]:
     """The ordered rows for ``jurisdictions``: universal rows first, then national.
 
@@ -59,7 +75,7 @@ def patterns_for(jurisdictions: Iterable[str]) -> tuple[Pattern, ...]:
     its own label before a national digit-run row can claim part of it.
     """
     codes = tuple(str(j).strip().upper() for j in jurisdictions if str(j).strip())
-    return (*UNIVERSAL_PATTERNS, *national_patterns_for(codes))
+    return (*UNIVERSAL_PATTERNS, *(_not_an_amount(row) for row in national_patterns_for(codes)))
 
 
 def re2_custom_info_types(jurisdictions: Iterable[str]) -> list[dict[str, object]]:
@@ -83,7 +99,9 @@ def re2_custom_info_types(jurisdictions: Iterable[str]) -> list[dict[str, object
             {
                 "info_type": {"name": info_type},
                 "regex": {"pattern": source},
-                "likelihood": "POSSIBLE",
+                # A national-identifier shape is a finding in its own right; it must clear the
+                # adapter's LIKELY floor (runtime-control contract, 2026-09-24).
+                "likelihood": "VERY_LIKELY",
             }
         )
     return out
