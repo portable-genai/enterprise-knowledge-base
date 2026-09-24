@@ -26,6 +26,10 @@ locals {
     KB_S2S_AUDIENCE         = "https://${var.api_domain}"
     KB_S2S_ALLOWED_CALLERS  = join(",", sort(tolist(var.s2s_allowed_callers)))
     KB_IAP_SERVICE_TENANTS  = jsonencode(var.s2s_service_tenants)
+    # The cheap runtime controls, stated rather than inherited: each is on in the reference,
+    # and off is a deployment choice the service logs at startup.
+    KB_GUARDRAIL     = tostring(var.guardrail_enabled)
+    KB_PII_REDACTION = tostring(var.pii_redaction_enabled)
   }
 }
 

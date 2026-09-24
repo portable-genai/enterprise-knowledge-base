@@ -11,6 +11,7 @@ import type { GroundedAnswer, Persona, RetrievedPassage } from "@/lib/types";
 export default function Home() {
   const [passages, setPassages] = useState<RetrievedPassage[] | null>(null);
   const [answer, setAnswer] = useState<GroundedAnswer | null>(null);
+  const [searchRedacted, setSearchRedacted] = useState(false);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [selectedPersona, setSelectedPersona] = useState("");
 
@@ -79,8 +80,9 @@ export default function Home() {
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <ChatPanel
-            onPassages={(p) => {
+            onPassages={(p, inputRedacted) => {
               setPassages(p);
+              setSearchRedacted(inputRedacted);
               setAnswer(null);
             }}
             onAnswer={(a) => {
@@ -89,7 +91,7 @@ export default function Home() {
             }}
           />
           {answer ? <AnswerView answer={answer} /> : null}
-          {passages ? <SearchView passages={passages} /> : null}
+          {passages ? <SearchView passages={passages} inputRedacted={searchRedacted} /> : null}
         </div>
 
         <aside className="space-y-6">

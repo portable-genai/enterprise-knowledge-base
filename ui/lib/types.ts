@@ -66,6 +66,8 @@ export interface WebCitation {
 // --------------------------------------------------------------------------- //
 export interface SearchResponse {
   passages: RetrievedPassage[];
+  /** Redaction changed the query before it was searched. */
+  input_redacted?: boolean;
 }
 
 export interface GroundedAnswer {
@@ -80,6 +82,8 @@ export interface GroundedAnswer {
   review_level: "standard" | "enhanced";
   review_reasons: string[];
   caveats: string[];
+  /** Redaction changed the question before the model saw it. */
+  input_redacted?: boolean;
 }
 
 export interface RedactionFinding {

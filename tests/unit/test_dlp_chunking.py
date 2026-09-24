@@ -76,4 +76,6 @@ def test_cross_boundary_pii_is_reinspected_and_masked(monkeypatch) -> None:
         lambda text: ("prefix John ", "Smith suffix"),
     )
     result = adapter.redact("prefix John Smith suffix")
-    assert result.text == "prefix ########## suffix"
+    # The merged character mask is relabelled with the info type the mask character stands for
+    # ("#" is PERSON_NAME), so the model reads what was there rather than a run of "#".
+    assert result.text == "prefix [PERSON_NAME] suffix"

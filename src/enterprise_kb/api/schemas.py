@@ -173,6 +173,8 @@ class SearchResponse(BaseModel):
     """ACL-filtered passages for a query."""
 
     passages: list[RetrievedPassageModel] = Field(default_factory=list)
+    #: Redaction changed the user's query before it was searched; the console says so.
+    input_redacted: bool = False
 
     @classmethod
     def from_domain(cls, passages: list[m.RetrievedPassage]) -> SearchResponse:
@@ -193,6 +195,8 @@ class AnswerResponse(BaseModel):
     review_level: str = "standard"
     review_reasons: list[str] = Field(default_factory=list)
     caveats: list[str] = Field(default_factory=list)
+    #: Redaction changed the user's question before the model saw it; the console says so.
+    input_redacted: bool = False
 
     @classmethod
     def from_domain(cls, answer: m.GroundedAnswer) -> AnswerResponse:

@@ -101,3 +101,18 @@ export function Card({
     </section>
   );
 }
+
+/** Shown when redaction changed what the user typed before it was searched or answered. */
+export function RedactionNotice({ answered }: { answered: boolean }) {
+  return (
+    <div
+      role="note"
+      data-input-redacted="true"
+      className="rounded-lg border border-sky-200 bg-sky-50 p-2.5 text-xs text-sky-900"
+    >
+      {answered
+        ? "Personal data in your input was masked before the model saw it."
+        : "Personal data in your input was masked before it was searched."}
+    </div>
+  );
+}

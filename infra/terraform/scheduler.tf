@@ -85,6 +85,16 @@ resource "google_cloud_run_v2_job" "freshness_refresh" {
           name  = "KB_ACL_BINDINGS_URI"
           value = var.acl_bindings_uri
         }
+        # The refresh job redacts and screens every document before it is indexed, so it takes
+        # the same switches as the serving API.
+        env {
+          name  = "KB_GUARDRAIL"
+          value = tostring(var.guardrail_enabled)
+        }
+        env {
+          name  = "KB_PII_REDACTION"
+          value = tostring(var.pii_redaction_enabled)
+        }
       }
 
       vpc_access {
