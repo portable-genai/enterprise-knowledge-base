@@ -1,11 +1,14 @@
 # Enterprise Knowledge Base (A2) : runtime configuration.
 #
-# Three deployment profiles, selected by KB_PROFILE (or profile: below):
+# Deployment profiles, selected by KB_PROFILE (or profile: below):
 #   gcp    : Google Cloud managed services (lazy SDK imports). Production sets
 #            KB_PROFILE=gcp explicitly (Dockerfile / runbook).
 #   local  : a WORKING offline laptop stack (SQLite FTS5 + deterministic LLM,
 #            SDK-free, no API key, no emulator required). Choose it deliberately
 #            (KB_PROFILE=local) for dev / test / CI.
+#   live   : the laptop lane: the local stack with the core model swapped for the fleet's
+#            local open-weight model (LOCAL_MODEL_URL / LOCAL_MODEL). Gemini only for the
+#            optional web grounding, and only while KB_GROUNDING_ENABLED is on.
 #   onprem : fail-fast Google Distributed Cloud migration placeholders.
 # Nothing in src/enterprise_kb/domain changes between profiles.
 #
@@ -18,7 +21,7 @@
 
 project_id: ${GOOGLE_CLOUD_PROJECT:-your-gcp-project}
 region: ${KB_REGION:-asia-southeast1} # Singapore reference deployment; runtime-parametric core
-profile: ${KB_PROFILE}             # gcp | local | platform | onprem
+profile: ${KB_PROFILE}             # gcp | local | live | platform | onprem
 kms_key: ${KB_KMS_KEY:-}           # regional Cloud KMS key for CMEK
 grounding_enabled: ${KB_GROUNDING_ENABLED:-false}
 
@@ -165,21 +168,25 @@ adapters:
     gcp: enterprise_kb.adapters.gcp.iap_identity:IapIdentityAdapter
     platform: enterprise_kb.adapters.gcp.iap_identity:IapIdentityAdapter
     local: enterprise_kb.adapters.local.identity:LocalPersonaIdentityAdapter
+    live: enterprise_kb.adapters.local.identity:LocalPersonaIdentityAdapter
     onprem: enterprise_kb.adapters.onprem.identity:OnPremIdentityAdapter
   retrieval:
     gcp: enterprise_kb.adapters.gcp.alloydb_retrieval:AlloyDBRetrievalAdapter
     platform: enterprise_kb.adapters.gcp.alloydb_retrieval:AlloyDBRetrievalAdapter
     local: enterprise_kb.adapters.local.retrieval:LocalFtsRetrievalAdapter
+    live: enterprise_kb.adapters.local.retrieval:LocalFtsRetrievalAdapter
     onprem: enterprise_kb.adapters.onprem.retrieval:OnPremRetrievalAdapter
   access_control:
     gcp: enterprise_kb.adapters.gcp.iam_access_control:IamAccessControlAdapter
     platform: enterprise_kb.adapters.gcp.iam_access_control:IamAccessControlAdapter
     local: enterprise_kb.adapters.local.access_control:LocalAccessControlAdapter
+    live: enterprise_kb.adapters.local.access_control:LocalAccessControlAdapter
     onprem: enterprise_kb.adapters.onprem.access_control:OnPremAccessControlAdapter
   ingestion:
     gcp: enterprise_kb.adapters.gcp.gcs_ingestion:GcsPortableIngestionAdapter
     platform: enterprise_kb.adapters.gcp.gcs_ingestion:GcsPortableIngestionAdapter
     local: enterprise_kb.adapters.local.ingestion:LocalIngestionAdapter
+    live: enterprise_kb.adapters.local.ingestion:LocalIngestionAdapter
     onprem: enterprise_kb.adapters.onprem.ingestion:OnPremIngestionAdapter
   # Anchored document chunks behind claim-to-anchor resolution. Backed by the EXISTING
   # chunk storage: AlloyDB's vector_table on gcp, the same SQLite file as the FTS index
@@ -188,56 +195,67 @@ adapters:
     gcp: enterprise_kb.adapters.gcp.alloydb_citation_store:AlloyDBCitationStoreAdapter
     platform: enterprise_kb.adapters.gcp.alloydb_citation_store:AlloyDBCitationStoreAdapter
     local: enterprise_kb.adapters.local.citation_store:LocalSqliteCitationStore
+    live: enterprise_kb.adapters.local.citation_store:LocalSqliteCitationStore
     onprem: enterprise_kb.adapters.onprem.citation_store:OnPremCitationStoreAdapter
   ledger:
     gcp: enterprise_kb.adapters.gcp.alloydb_ledger:AlloyDBLedgerAdapter
     platform: enterprise_kb.adapters.gcp.alloydb_ledger:AlloyDBLedgerAdapter
     local: enterprise_kb.adapters.local.ledger:LocalLedgerAdapter
+    live: enterprise_kb.adapters.local.ledger:LocalLedgerAdapter
     onprem: enterprise_kb.adapters.onprem.ledger:OnPremLedgerAdapter
   llm:
     gcp: enterprise_kb.adapters.gcp.gemini_llm:GeminiLLMAdapter
     platform: enterprise_kb.adapters.gcp.gemini_llm:GeminiLLMAdapter
     local: enterprise_kb.adapters.local.llm:LocalDeterministicLLMAdapter
+    live: enterprise_kb.adapters.live.llm:LocalModelLLMAdapter
     onprem: enterprise_kb.adapters.onprem.llm:OnPremLLMAdapter
   grounding:
     gcp: enterprise_kb.adapters.gcp.gemini_grounding:GeminiGoogleSearchGroundingAdapter
     platform: enterprise_kb.adapters.gcp.gemini_grounding:GeminiGoogleSearchGroundingAdapter
     local: enterprise_kb.adapters.local.grounding:LocalDisabledGroundingAdapter
+    live: enterprise_kb.adapters.live.grounding:LiveOptionalGroundingAdapter
     onprem: enterprise_kb.adapters.onprem.grounding:OnPremGroundingAdapter
   guardrail:
     gcp: enterprise_kb.adapters.gcp.model_armor_guardrail:ModelArmorGuardrailAdapter
     local: enterprise_kb.adapters.local.guardrail:LocalHeuristicGuardrailAdapter
+    live: enterprise_kb.adapters.local.guardrail:LocalHeuristicGuardrailAdapter
     platform: enterprise_kb.adapters.platform.remote_guardrail:RemoteGuardrailAdapter
     onprem: enterprise_kb.adapters.onprem.guardrail:OnPremGuardrailAdapter
   redaction:
     gcp: enterprise_kb.adapters.gcp.dlp_redaction:DlpRedactionAdapter
     local: enterprise_kb.adapters.local.redaction:LocalRegexRedactionAdapter
+    live: enterprise_kb.adapters.local.redaction:LocalRegexRedactionAdapter
     platform: enterprise_kb.adapters.platform.remote_redaction:RemoteRedactionAdapter
     onprem: enterprise_kb.adapters.onprem.redaction:OnPremRedactionAdapter
   agent_runtime:
     gcp: enterprise_kb.adapters.gcp.agent_runtime:AgentRuntimeAdapter
     platform: enterprise_kb.adapters.gcp.agent_runtime:AgentRuntimeAdapter
     local: enterprise_kb.adapters.local.runtime:LocalAgentRuntimeAdapter
+    live: enterprise_kb.adapters.local.runtime:LocalAgentRuntimeAdapter
     onprem: enterprise_kb.adapters.onprem.runtime:OnPremAgentRuntimeAdapter
   session:
     gcp: enterprise_kb.adapters.gcp.vertex_sessions:VertexSessionsAdapter
     platform: enterprise_kb.adapters.gcp.vertex_sessions:VertexSessionsAdapter
     local: enterprise_kb.adapters.local.session:LocalSessionAdapter
+    live: enterprise_kb.adapters.local.session:LocalSessionAdapter
     onprem: enterprise_kb.adapters.onprem.session:OnPremSessionAdapter
   memory:
     gcp: enterprise_kb.adapters.gcp.vertex_memory_bank:VertexMemoryBankAdapter
     platform: enterprise_kb.adapters.gcp.vertex_memory_bank:VertexMemoryBankAdapter
     local: enterprise_kb.adapters.local.memory:LocalMemoryAdapter
+    live: enterprise_kb.adapters.local.memory:LocalMemoryAdapter
     onprem: enterprise_kb.adapters.onprem.memory:OnPremMemoryAdapter
   audit:
     gcp: enterprise_kb.adapters.gcp.cloud_logging_audit:CloudLoggingAuditAdapter
     local: enterprise_kb.adapters.local.audit:LocalAppendOnlyAuditAdapter
+    live: enterprise_kb.adapters.local.audit:LocalAppendOnlyAuditAdapter
     platform: enterprise_kb.adapters.platform.remote_audit:RemoteAuditAdapter
     onprem: enterprise_kb.adapters.onprem.audit:OnPremAuditAdapter
   tracer:
     gcp: enterprise_kb.adapters.gcp.cloud_trace_tracer:CloudTraceTracerAdapter
     platform: enterprise_kb.adapters.gcp.cloud_trace_tracer:CloudTraceTracerAdapter
     local: enterprise_kb.adapters.local.tracer:LocalNoopTracerAdapter
+    live: enterprise_kb.adapters.local.tracer:LocalNoopTracerAdapter
     onprem: enterprise_kb.adapters.onprem.tracer:OnPremTracerAdapter
   evaluation:
     # Consequential ACL/recall metrics remain the deterministic portable gate. The Gen AI
@@ -245,14 +263,17 @@ adapters:
     gcp: enterprise_kb.adapters.local.evaluation:LocalOfflineEvalAdapter
     platform: enterprise_kb.adapters.local.evaluation:LocalOfflineEvalAdapter
     local: enterprise_kb.adapters.local.evaluation:LocalOfflineEvalAdapter
+    live: enterprise_kb.adapters.local.evaluation:LocalOfflineEvalAdapter
     onprem: enterprise_kb.adapters.onprem.evaluation:OnPremEvalAdapter
   registry:
     gcp: enterprise_kb.adapters.gcp.a2a_registry:A2ARegistryAdapter
     local: enterprise_kb.adapters.local.registry:LocalRegistryAdapter
+    live: enterprise_kb.adapters.local.registry:LocalRegistryAdapter
     platform: enterprise_kb.adapters.platform.remote_registry:RemoteRegistryAdapter
     onprem: enterprise_kb.adapters.onprem.registry:OnPremRegistryAdapter
   tool_catalog:
     gcp: enterprise_kb.adapters.gcp.mcp_tool_catalog:McpToolCatalogAdapter
     platform: enterprise_kb.adapters.gcp.mcp_tool_catalog:McpToolCatalogAdapter
     local: enterprise_kb.adapters.local.tool_catalog:LocalToolCatalogAdapter
+    live: enterprise_kb.adapters.local.tool_catalog:LocalToolCatalogAdapter
     onprem: enterprise_kb.adapters.onprem.tool_catalog:OnPremToolCatalogAdapter

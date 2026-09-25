@@ -7,19 +7,20 @@ defaulting to the first persona when none is supplied. It lets you exercise per-
 authorization (different entitlement principals and tenants, including a cross-tenant
 persona) without standing up any identity provider: each persona's ``principals`` are the
 group ids the local access-control directory resolves to ACL tags, so switching persona
-changes which corpus passages the same query admits. It is bound ONLY under the local
-profile; secure mode uses the IAP adapter, which verifies a real assertion.
+changes which corpus passages the same query admits. It is bound ONLY under the laptop
+profiles (``local`` and ``live``); secure mode uses the IAP adapter, which verifies a real
+assertion.
 
 The personas are an UNAUTHENTICATED grant of read access to the governed corpus, so this
-adapter refuses to construct unless the local profile was chosen DELIBERATELY: the profile must
-actually be ``local`` and (when the settings came from the environment) ``KB_PROFILE`` must have
-been set rather than inherited from the fallback. A missing env var therefore fails closed
-instead of resolving every caller to a seeded reader of the bank corpus.
+adapter refuses to construct unless a laptop profile was chosen DELIBERATELY: the profile must
+actually be ``local`` or ``live`` and (when the settings came from the environment)
+``KB_PROFILE`` must have been set rather than inherited from the fallback. A missing env var
+therefore fails closed instead of resolving every caller to a seeded reader of the bank corpus.
 """
 
 from __future__ import annotations
 
-from ...config import Settings
+from ...config import LAPTOP_PROFILES, Settings
 from ...domain.identity import IdentityError, Principal, RequestContext
 from ...ports.identity import CLIENT_ASSERTED
 
@@ -79,9 +80,9 @@ class LocalPersonaIdentityAdapter:
     end_user_auth = CLIENT_ASSERTED
 
     def __init__(self, settings: Settings) -> None:
-        if settings.profile != "local":
+        if settings.profile not in LAPTOP_PROFILES:
             raise LocalPersonaProfileError(
-                "seeded dev personas are local-profile only; "
+                "seeded dev personas are laptop-profile only (local, live); "
                 f"refusing to serve them under profile {settings.profile!r}"
             )
         if not settings.profile_explicit:

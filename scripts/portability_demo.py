@@ -19,7 +19,13 @@ import kb_demo
 from hex_service_kit import EXPORT_FORMAT, AuditChainError
 
 from enterprise_kb.adapters.local.redaction import LocalRegexRedactionAdapter
-from enterprise_kb.config import Container, LocalSettings, PiiSettings, Settings
+from enterprise_kb.config import (
+    RUNTIME_PROFILES,
+    Container,
+    LocalSettings,
+    PiiSettings,
+    Settings,
+)
 from enterprise_kb.domain.identity import RequestContext
 from enterprise_kb.domain.models import AuditEvent, Decision, KbQuery
 
@@ -78,9 +84,8 @@ def main() -> int:
     base = Settings.load()
     _require(base.profile == "local", "proof must run with KB_PROFILE=local")
     _require(set(base.adapters) == EXPECTED_PORTS, "port set")
-    profiles = {"gcp", "platform", "local", "onprem"}
     _require(
-        all(set(binding) == profiles for binding in base.adapters.values()),
+        all(set(binding) == RUNTIME_PROFILES for binding in base.adapters.values()),
         "every port must bind every declared profile exactly",
     )
     print("PASS port map: every port explicitly binds every declared profile")

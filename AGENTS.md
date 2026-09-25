@@ -17,7 +17,7 @@ freshness.
 | Catalog id | `enterprise-knowledge-base` |
 | Package | `src/enterprise_kb/` |
 | Profile variable | `KB_PROFILE` |
-| Adapter families | `gcp`, `local`, `onprem`, `platform` |
+| Adapter families | `gcp`, `live`, `local`, `onprem`, `platform` |
 | Gate | `make check` |
 
 That variable is read in one module and resolved in three states: unset is no choice,

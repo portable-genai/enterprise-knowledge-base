@@ -30,6 +30,11 @@ ingest flow, and the deployment topology.
 | `ToolCatalogPort` | MCP catalog | in-process | | fail-fast |
 | `AgentRuntimePort` / `SessionPort` / `MemoryPort` | disabled pending trusted invocation context | in-process | | fail-fast |
 
+`live` binds every port exactly as `local` does except two: `LLMPort` reaches the local
+open-weight model through the shared `hex_service_kit.localmodel` client, and `GroundingPort`
+is Gemini `google_search` only while `KB_GROUNDING_ENABLED` is on, reporting itself unavailable
+when that switch is on without credentials. No serving route calls `GroundingPort` today.
+
 The AlloyDB adapters share one SDK-free connection-input boundary and enable connector IAM
 database authentication. Terraform creates distinct IAM database users for the app and pipeline
 service accounts; the deployment injects only that workload's Terraform-output

@@ -197,6 +197,19 @@ Optional: higher-fidelity local runs route to Google's official emulators when t
 set AND the `[gcp]` client libs are installed (the google client is imported lazily, only
 on that branch). The default local path needs none of them.
 
+### 4.1a `live` profile: the local stack on the local model
+
+`live` is `local` with one port swapped: answers come from the fleet's local open-weight
+model through the shared `hex_service_kit.localmodel` client (`LOCAL_MODEL_URL`, default
+`http://127.0.0.1:8001/chat/completions`; `LOCAL_MODEL`, default
+`mlx-community/gemma-4-31b-it-8bit`), with the same seeded corpus, personas and loopback posture.
+It needs no cloud credentials. `KB_GROUNDING_ENABLED=true` turns on the optional Gemini
+`google_search` grounding leg, which needs `GOOGLE_CLOUD_PROJECT`, the `[gcp]` extra and
+application-default credentials; without them it reports itself unavailable and the core still
+answers. Start the model server with
+`python -m mlx_vlm.server --model mlx-community/gemma-4-31b-it-8bit --port 8001`, then
+`make run-api PROFILE=live`.
+
 ### 4.2 `onprem` profile: fail-fast migration target
 
 ```bash

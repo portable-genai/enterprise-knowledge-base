@@ -51,8 +51,10 @@ PORT_PROTOCOLS: dict[str, type] = {
     "identity": ports.IdentityPort,
 }
 
-# Profiles whose adapters must construct + satisfy the Protocols with no GCP SDK.
-SDK_FREE_PROFILES = ("onprem", "local")
+# Profiles whose adapters must construct + satisfy the Protocols with no GCP SDK. ``live`` is
+# the local stack with the model reached through the shared kit client, and its optional
+# grounding leg imports nothing while it is switched off.
+SDK_FREE_PROFILES = ("onprem", "local", "live")
 
 
 def _settings(profile: str) -> Settings:
