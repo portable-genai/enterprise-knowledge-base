@@ -115,9 +115,11 @@ def build_root_agent(
     if grounding_agent is not None:
         tools.append(AgentTool(agent=grounding_agent))
 
-    # thinking=high for the reasoning model (gemini-3.5-flash) per SPEC §3.
+    # thinking=high for the reasoning model (gemini-3.5-flash) per SPEC §3. No temperature:
+    # the root agent drafts and narrates from its tools' governed results, so sampling is
+    # left to the model (owner decision, 2026-09-23). What must compare between runs (the
+    # citations, the confidence, the review level) comes from those tools, not from here.
     generate_content_config = types.GenerateContentConfig(
-        temperature=0.2,
         thinking_config=types.ThinkingConfig(thinking_budget=-1),
     )
 

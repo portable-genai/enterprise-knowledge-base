@@ -190,7 +190,7 @@ def test_the_container_builds_every_port_under_live_with_no_credentials(
     assert container.grounding.enabled is False
 
 
-def test_the_banner_names_the_local_model_under_live(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_model_pill_names_the_local_model_under_live(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LOCAL_MODEL", "some-org/some-local-model")
     assert _live_settings().generator_model == "some-org/some-local-model"
 
