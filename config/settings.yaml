@@ -46,8 +46,6 @@ models:
   location: ${KB_MODEL_LOCATION:-asia-southeast1}
   reasoning: gemini-3.5-flash          # GA : grounded-answer synthesis (thinking=high)
   triage: gemini-3.5-flash             # same reviewed Singapore single-zone PT order
-  hard_reasoning: gemini-3.5-flash  # in-region SG commitment; no Gemini 3 PRO tier serves any location
-  use_hard_reasoning: false
 
 storage:
   corpus_bucket: ${KB_CORPUS_BUCKET:-enterprise-knowledge-base-corpus}

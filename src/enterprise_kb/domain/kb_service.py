@@ -275,6 +275,11 @@ class KnowledgeBaseService:
             user_content=user,
             model=None,  # adapter default => reasoning model gemini-3.5-flash
             response_schema=_ANSWER_SCHEMA,
+            # PINNED. The prose is drafting, but the same structured reply carries
+            # `used_document_ids` (extracted: they become the citations) and `confidence`
+            # (scored: below the floor it escalates review). A sampled reply moved both
+            # between two runs of one question in a sibling service.
+            temperature=0.0,
         )
         response = self._llm.generate(request)
         g.maybe_record_usage(self._tracer, response)
@@ -402,6 +407,8 @@ class KnowledgeBaseService:
             ),
             model=None,
             response_schema=_CRITIQUE_SCHEMA,
+            # PINNED. A judge, but not a free one: `grounded` (a label) and `confidence` (a
+            # score) feed the deterministic review escalation, so two runs must compare.
             temperature=0.0,
         )
         try:

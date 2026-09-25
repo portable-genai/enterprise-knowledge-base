@@ -20,6 +20,12 @@ the `@types` packages, nothing else.
   citation cards.
 - **Passages** (`SearchView`): each ACL-admitted passage with the tags that admitted it.
 - **Corpus freshness** (`CorpusStatus`): a live roll-up of the freshness + residency ledger.
+- **Model pills** (`ModelPills`, mounted in the layout): two small pills at the top right of
+  every page. The first names the model: the configured `generator_model` from `/healthz`
+  (dashed, where it runs in its title) until an answer arrives, then the model that answered
+  it, from the response's `X-Answered-By`. The second, `Search`, shows only while that answer
+  carried `X-Search-Used: true`. One `window.fetch` wrapper (`lib/answer-provenance.mjs`,
+  node-tested) reads both headers, which the service exposes to this cross-origin console.
 
 ## Run it (source only)
 

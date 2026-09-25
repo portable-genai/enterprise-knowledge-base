@@ -1,10 +1,12 @@
-"""The banner's server half: this service names its runtime and its model.
+"""The model pill's server half: this service names its runtime and its model.
 
-Every served UI in the fleet states, at the top of every page, where it is running and
-which model answers (org decision, 2026-08-30). The console must never infer either. A
-page that read its runtime from ``window.location`` would be right until the deployment
-served through a proxy, and wrong silently after that; a page that hard-coded a model name
-would keep printing it after the binding changed.
+Every served UI in the fleet shows, at the top right of every page, the model that answers:
+before any answer, the configured model from here with where it runs in the pill's title,
+then the model that answered (``X-Answered-By``, pinned in ``test_answer_provenance.py``).
+The console must never infer either value. A page that read its runtime from
+``window.location`` would be right until the deployment served through a proxy, and wrong
+silently after that; a page that hard-coded a model name would keep printing it after the
+binding changed.
 
 So the service answers, and the answer is DERIVED rather than kept as a second field
 someone has to remember to update. That is what these tests pin.
@@ -42,8 +44,8 @@ def test_the_runtime_says_where_the_process_runs_not_whose_model_it_calls(
 ) -> None:
     """``onprem`` reads ``local``, and there that is the whole selling point.
 
-    The banner states WHERE the process runs, and the model half states WHOSE model
-    answers, precisely so the two facts cannot be collapsed into one misleading sentence.
+    The pill's title states WHERE the process runs, and its text states WHOSE model answers,
+    precisely so the two facts cannot be collapsed into one misleading sentence.
     """
     assert dataclasses.replace(settings, profile=profile).runtime == expected
 

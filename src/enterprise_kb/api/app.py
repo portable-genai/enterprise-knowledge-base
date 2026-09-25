@@ -37,7 +37,11 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from hex_service_kit import cors_allowlist, resolve_bind_host
-from hex_service_kit.web import add_loopback_exposure_guard, add_security_headers
+from hex_service_kit.web import (
+    add_loopback_exposure_guard,
+    add_security_headers,
+    install_answer_provenance,
+)
 
 from ..config import Settings, end_user_auth_kind
 from ..domain import models as m
@@ -199,6 +203,10 @@ app.add_middleware(
     # DELIBERATE local profile, never to an unconfigured run.
     allow_headers=["Content-Type", "Authorization"]
     + (["X-Dev-Persona"] if _EXPOSURE == "local" else []),
+    # The console calls this service directly (cross-origin standalone), and a browser hides
+    # every response header not listed here, so without this the model pills could never read
+    # what answered and would sit on the configured model forever.
+    expose_headers=["X-Answered-By", "X-Search-Used"],
 )
 
 
@@ -207,6 +215,15 @@ app.add_middleware(
 # X-Frame-Options, X-Content-Type-Options: nosniff, Referrer-Policy: no-referrer, and
 # Strict-Transport-Security on every non-local profile (TLS terminates in front of us).
 add_security_headers(app, frame_ancestors=_FRAME_ANCESTORS, profile=_EXPOSURE)
+
+# Which model answered, and whether it searched: the model adapters note it as they call
+# (`hex_service_kit.provenance.note_model` / `note_search`; the kit's local-model client notes
+# itself) and this emits it as `X-Answered-By` / `X-Search-Used` on the same response. The
+# console's pills read those two headers, so what a pill names is what answered, never what
+# configuration says would. A request that noted nothing (search, ingest, health) sends
+# neither, and the pill keeps showing the configured `generator_model` from `/healthz`. The
+# CORS `expose_headers` above is what lets the cross-origin console read them.
+install_answer_provenance(app)
 
 
 # A request arrives with nothing authenticating the END USER unless BOTH of these hold, and the

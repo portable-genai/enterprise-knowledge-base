@@ -70,14 +70,25 @@ constructor that does not follow the one convention.
    `module.path:ClassName`. This is the build contract; there is no other registry.
 4. **Speak in domain types only.** Return the `domain/models.py` (or `domain/kernel.py`)
    dataclasses; never leak an SDK object across the port.
-5. **Cover the profile in the contract test** if you added a new profile family: extend
+5. **A model adapter notes what answered, and samples per call.** After a successful call
+   it calls `hex_service_kit.provenance.note_model(<the model id it actually called>)`,
+   and `provenance.note_search()` when, and only when, an online search tool was attached
+   to THAT call (`adapters/gcp/gemini_grounding.py` is the one that does). The `local`
+   stub notes `DETERMINISTIC_STUB_MODEL`; the `live` adapter needs nothing, because the
+   kit client notes itself. `api/app.py` turns the notes into `X-Answered-By` /
+   `X-Search-Used`, which the console's model pills show. `LlmRequest.temperature` is
+   `None` unless the call site pins it, and an adapter OMITS a `None` temperature rather
+   than sending a number: free means absent, never `1.0`. Pin `0.0` only where the output
+   is extracted, classified, scored or compared. `generator_model` in `config.py` must be
+   the model the adapter calls, with no flag that could name another.
+6. **Cover the profile in the contract test** if you added a new profile family: extend
    `SDK_FREE_PROFILES` in `tests/contract/test_port_parity.py` only when the family
    really is SDK-free.
-6. **Add behavioural parity** in `tests/contract/test_behavioral_parity.py` when the new
+7. **Add behavioural parity** in `tests/contract/test_behavioral_parity.py` when the new
    adapter has a sibling that must agree with it (`local == platform`), or a
    deterministic-rerun / fail-fast proof when it does not.
-7. **Unit-test the adapter itself** with the in-memory fakes; no network, no credentials.
-8. **Run the gate.** `make lint test eval demo-selftest portability-demo`.
+8. **Unit-test the adapter itself** with the in-memory fakes; no network, no credentials.
+9. **Run the gate.** `make lint test eval demo-selftest portability-demo`.
 
 Failure mode if you skip step 3: `test_port_protocols_matches_settings_adapters` fails
 with the missing key named. If you skip step 2,

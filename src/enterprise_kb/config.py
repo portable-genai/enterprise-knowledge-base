@@ -190,6 +190,11 @@ def resolve_profile(
 #: its process, stores and core model are all on the operator's machine.
 _MANAGED_PROFILES: frozenset[str] = frozenset({"gcp", "platform"})
 
+#: What the deterministic ``local`` generator answers as. ``generator_model`` reports it under
+#: ``local`` and the adapter notes it on every call, so the pill names the same thing before and
+#: after an answer: a stub, never the Gemini model it stands in for.
+DETERMINISTIC_STUB_MODEL = "deterministic-offline-stub"
+
 
 @dataclass(frozen=True)
 class ModelSettings:
@@ -199,8 +204,6 @@ class ModelSettings:
     location: str = "us"
     reasoning: str = "gemini-3.5-flash"
     triage: str = "gemini-3.5-flash"  # shares required Singapore single-zone PT
-    hard_reasoning: str = "gemini-3.5-flash"  # Preview : feature-flagged off by default
-    use_hard_reasoning: bool = False
 
 
 @dataclass(frozen=True)
@@ -368,7 +371,7 @@ class Settings:
 
     @property
     def runtime(self) -> str:
-        """Where this process is running, as the UI banner states it: ``gcp`` or ``local``.
+        """Where this process is running, as the UI's model pill states it: ``gcp`` or ``local``.
 
         Derived from the profile, never sniffed from the environment. A console that read
         its runtime from ``window.location`` would be right until the deployment served
@@ -378,11 +381,17 @@ class Settings:
 
     @property
     def generator_model(self) -> str:
-        """Which model answers, for the UI banner (org decision, 2026-08-30).
+        """WHICH model the bound generator would call, as the UI's model pill first states it.
+
+        The pill shows this until an answer arrives, then the model that ANSWERED
+        (``X-Answered-By``, noted by the adapter itself). So this must be the model the adapter
+        calls: under ``gcp`` the setting its call reads (``request.model or models.reasoning``),
+        never a model a flag could swap in, and under ``local`` the stub name the deterministic
+        adapter notes.
 
         Read off the LLM binding the container will actually build, not from a second
         field someone has to remember to update. A repo that rebinds ``llm`` for a profile
-        changes what the banner says in the same edit, which is the only way the two stay
+        changes what the pill says in the same edit, which is the only way the two stay
         true to each other: a settings string would be a claim ABOUT the binding rather
         than the binding.
         """
@@ -399,7 +408,7 @@ class Settings:
             # The on-prem adapter is a fail-fast migration placeholder: it raises rather
             # than generating. Naming a model here would advertise one that never answers.
             return "onprem-not-implemented"
-        return "deterministic-offline-stub"
+        return DETERMINISTIC_STUB_MODEL
 
     @property
     def choice(self) -> ProfileChoice:

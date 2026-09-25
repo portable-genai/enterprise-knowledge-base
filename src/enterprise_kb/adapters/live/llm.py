@@ -12,7 +12,8 @@ Mapping, mirroring :class:`~enterprise_kb.adapters.gcp.gemini_llm.GeminiLLMAdapt
   ``assistant`` turns and every other role is user context, as the Gemini adapter folds them.
 * A request carrying ``response_schema`` goes through ``complete_json``: the schema is stated
   in the prompt, the answer is validated, and a malformed first answer is fed back and retried
-  by the kit. The request's temperature is passed through unchanged.
+  by the kit. The request's temperature is passed through unchanged, ``None`` included, and
+  the kit then sends none.
 * A validated structured answer is handed on as its JSON alone (fences and prose dropped).
 * ``model`` on the response is the id the server says answered, not the configured name.
 * The kit reports ``usage`` as ``None`` when the server sends none (MLX does not). The domain

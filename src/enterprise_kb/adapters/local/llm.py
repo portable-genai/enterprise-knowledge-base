@@ -18,7 +18,9 @@ import json
 import re
 from typing import Any
 
-from ...config import Settings
+from hex_service_kit import provenance
+
+from ...config import DETERMINISTIC_STUB_MODEL, Settings
 from ...domain.models import (
     LlmRequest,
     LlmResponse,
@@ -59,6 +61,9 @@ class LocalDeterministicLLMAdapter:
     # LLMPort
     # ------------------------------------------------------------------ #
     def generate(self, request: LlmRequest) -> LlmResponse:
+        # The pill names what answered, and here that is a stub, not the Gemini model whose
+        # name the response below keeps for the usage records.
+        provenance.note_model(DETERMINISTIC_STUB_MODEL)
         document_ids = self._document_ids_from_request(request)
         body = self._body_for_schema(request.response_schema, document_ids)
         return LlmResponse(
@@ -71,6 +76,7 @@ class LocalDeterministicLLMAdapter:
 
     def classify(self, text: str, labels: list[str]) -> str:
         # Deterministic triage: first label (the services only use this for routing).
+        provenance.note_model(DETERMINISTIC_STUB_MODEL)
         return labels[0] if labels else ""
 
     # ------------------------------------------------------------------ #
