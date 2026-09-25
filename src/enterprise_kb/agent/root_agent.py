@@ -36,7 +36,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from ..config import Settings
+from ..config import LAPTOP_PROFILES, Settings
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from google.adk.agents import LlmAgent
@@ -97,7 +97,11 @@ def build_root_agent(
     container = build_container(settings)
     callbacks = build_callbacks(container)
 
-    if context_provider is None and settings.profile == "local" and settings.profile_explicit:
+    if (
+        context_provider is None
+        and settings.profile in LAPTOP_PROFILES
+        and settings.profile_explicit
+    ):
         # Seeded persona is selected by trusted local host configuration, not model arguments.
         context_provider = RequestContextPrincipalProvider(
             container.identity, lambda: RequestContext(headers={})

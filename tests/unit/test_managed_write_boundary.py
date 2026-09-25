@@ -29,7 +29,7 @@ def test_nonlocal_api_write_surface_refuses_while_local_demo_remains_portable() 
 
 def test_agent_and_discovery_surface_are_read_only_in_every_profile() -> None:
     assert set(READ_ONLY_TOOL_NAMES) == {"search_kb", "answer_grounded"}
-    for profile in ("local", "gcp", "platform", "onprem"):
+    for profile in ("local", "live", "gcp", "platform", "onprem"):
         card = build_agent_card(Settings(profile=profile))
         assert {skill.id for skill in card.skills} == {"search_kb", "answer_grounded"}
 

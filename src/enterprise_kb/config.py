@@ -38,7 +38,20 @@ _PROFILE_ENV = "KB_PROFILE"
 #: Every profile the adapter table binds. The comparison against it is EXACT and
 #: case-sensitive: ``Local`` selects none of the ``local`` relaxations but also none of the
 #: restrictions, so normalising the case here would turn a typo into a silent choice.
-RUNTIME_PROFILES = frozenset({"local", "gcp", "platform", "onprem"})
+RUNTIME_PROFILES = frozenset({"local", "live", "gcp", "platform", "onprem"})
+
+#: The laptop profiles. ``live`` is ``local`` with ONE port swapped: the core model is the
+#: fleet's local open-weight model instead of the deterministic stub (and, only while
+#: ``KB_GROUNDING_ENABLED`` is on, the optional web-grounding leg may call Gemini). It serves
+#: the same seeded no-auth personas from the same in-process stores, so it gets exactly
+#: ``local``'s posture: loopback bind, dev CORS origins, the X-Dev-Persona header, no HSTS,
+#: the local write surface. Posture is decided by comparing ONE string, so every member here
+#: is presented to the posture layers as ``local`` (see :class:`ProfileChoice`).
+LAPTOP_PROFILES = frozenset({"local", "live"})
+
+#: The one switch for the optional public-web grounding leg (the Gemini ``google_search``
+#: tool). Read through ``grounding_enabled:`` in ``config/settings.yaml``; off unless set.
+GROUNDING_ENV = "KB_GROUNDING_ENABLED"
 
 #: The profile string handed to every INTERNET-FACING posture decision when ``KB_PROFILE`` was
 #: never set. Deliberately NOT a member of :data:`RUNTIME_PROFILES` and never reaching
@@ -112,18 +125,25 @@ class ProfileChoice:
 
         These grant something extra to ``local``, so an unconsented run must NOT look like
         ``local``: it gets :data:`UNCONSENTED_PROFILE`, which is no origin's allowlist, HSTS
-        on, and (via the commons S2S dependency) no zero-secret opening.
+        on, and (via the commons S2S dependency) no zero-secret opening. A deliberate laptop
+        profile (``live`` as well as ``local``) is presented as ``local``, because the kit's
+        posture helpers compare exactly that string and ``live`` must get its posture whole.
         """
-        return self.profile if self.explicit else UNCONSENTED_PROFILE
+        if not self.explicit:
+            return UNCONSENTED_PROFILE
+        return "local" if self.profile in LAPTOP_PROFILES else self.profile
 
     @property
     def bind_profile(self) -> str:
         """The profile the bind guard keys off, where ``local`` is the RESTRICTIVE case.
 
         ``resolve_bind_host`` confines ``local`` to loopback and lets fronted profiles take
-        ``0.0.0.0``, so here an unconsented run must look like ``local`` and stay on loopback.
+        ``0.0.0.0``, so here an unconsented run must look like ``local`` and stay on loopback,
+        and so must ``live``, which serves the same no-auth personas.
         """
-        return self.profile if self.explicit else "local"
+        if not self.explicit or self.profile in LAPTOP_PROFILES:
+            return "local"
+        return self.profile
 
     @property
     def service_auth_configured(self) -> bool:
@@ -166,7 +186,8 @@ def resolve_profile(
 
 #: The profiles whose runtime is a managed cloud, for :attr:`Settings.runtime`. ``onprem`` is
 #: NOT one -- running on the adopter's own iron is its entire point, and "on GCP" is the one
-#: sentence that deployment must never print at the top of a page.
+#: sentence that deployment must never print at the top of a page. ``live`` is not one either:
+#: its process, stores and core model are all on the operator's machine.
 _MANAGED_PROFILES: frozenset[str] = frozenset({"gcp", "platform"})
 
 
@@ -315,7 +336,7 @@ class LocalSettings:
 class Settings:
     project_id: str = "your-gcp-project"
     region: str = "asia-southeast1"
-    # gcp | local | platform | onprem. Which ADAPTER FAMILY to bind; absent any choice this
+    # gcp | local | live | platform | onprem. Which ADAPTER FAMILY to bind; absent any choice this
     # stays "local" because the alternative imports cloud SDKs that are not installed. Which
     # posture to serve under is a different question: read ``choice`` below, never this field.
     profile: str = "local"
@@ -367,6 +388,11 @@ class Settings:
         """
         binding = self.adapters.get("llm", {}).get(self.profile, "")
         _, _, class_name = binding.partition(":")
+        if class_name == "LocalModelLLMAdapter":
+            # The kit owns the LOCAL_MODEL read; asking it keeps one home for that setting.
+            from hex_service_kit.localmodel import LocalModelSettings
+
+            return LocalModelSettings.from_env().model
         if class_name == "GeminiLLMAdapter":
             return self.models.reasoning
         if class_name == "OnPremLLMAdapter":
@@ -428,9 +454,7 @@ class Settings:
         known = {f for f in Settings.__dataclass_fields__ if f not in nested}
         flat: dict[str, Any] = {k: v for k, v in raw.items() if k in known}
         if "grounding_enabled" in flat:
-            flat["grounding_enabled"] = _strict_bool(
-                flat["grounding_enabled"], name="KB_GROUNDING_ENABLED"
-            )
+            flat["grounding_enabled"] = _strict_bool(flat["grounding_enabled"], name=GROUNDING_ENV)
         settings = Settings(
             profile=choice.profile,
             profile_explicit=choice.explicit,
