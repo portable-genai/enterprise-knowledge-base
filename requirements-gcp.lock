@@ -17,7 +17,7 @@
 #
 # tag -> commit, and `tests/unit/test_repo_artifacts.py` proves each line against the tag
 # `pyproject.toml` names and against the other lockfile:
-#   hex-service-kit  v0.0.10 = 0e71fc776e3a1813f51545352984741f0e3850ee
+#   hex-service-kit  v0.0.11 = ec2d724512c4d21c70600a895715e4340908282d
 #   pii-kit          v0.0.1 = 654493048a8434d645757cc916bb9d446313688f
 a2a-sdk==1.1.2
     # via enterprise-knowledge-base (pyproject.toml)
@@ -29,8 +29,6 @@ aiohttp==3.14.3
     # via
     #   google-cloud-aiplatform
     #   litellm
-aiologic==0.17.1 ; python_full_version < '3.13'
-    # via culsans
 aiosignal==1.4.0
     # via aiohttp
 aiosqlite==0.22.1
@@ -91,8 +89,6 @@ cryptography==50.0.1
     #   google-cloud-alloydb-connector
     #   joserfc
     #   pyjwt
-culsans==0.11.0 ; python_full_version < '3.13'
-    # via a2a-sdk
 distro==1.9.0
     # via
     #   google-genai
@@ -130,9 +126,9 @@ google-api-core==2.34.0
     #   google-cloud-logging
     #   google-cloud-resource-manager
     #   google-cloud-storage
-    #   google-cloud-trace
 google-auth==2.58.0
     # via
+    #   enterprise-knowledge-base (pyproject.toml)
     #   google-adk
     #   google-api-core
     #   google-cloud-aiplatform
@@ -145,7 +141,6 @@ google-auth==2.58.0
     #   google-cloud-logging
     #   google-cloud-resource-manager
     #   google-cloud-storage
-    #   google-cloud-trace
     #   google-genai
 google-cloud-aiplatform==2.1.0
     # via enterprise-knowledge-base (pyproject.toml)
@@ -177,8 +172,6 @@ google-cloud-storage==3.14.1
     # via
     #   enterprise-knowledge-base (pyproject.toml)
     #   google-cloud-aiplatform
-google-cloud-trace==1.20.0
-    # via opentelemetry-exporter-gcp-trace
 google-crc32c==1.8.0
     # via
     #   google-cloud-storage
@@ -217,7 +210,6 @@ grpcio==1.83.1
     #   google-cloud-dlp
     #   google-cloud-logging
     #   google-cloud-resource-manager
-    #   google-cloud-trace
     #   googleapis-common-protos
     #   grpc-google-iam-v1
     #   grpcio-status
@@ -228,7 +220,7 @@ h11==0.16.0
     #   httpcore
     #   httpcore2
     #   uvicorn
-hex-service-kit @ git+https://github.com/portable-genai/hex-service-kit@0e71fc776e3a1813f51545352984741f0e3850ee
+hex-service-kit @ git+https://github.com/portable-genai/hex-service-kit@ec2d724512c4d21c70600a895715e4340908282d
     # via enterprise-knowledge-base (pyproject.toml)
 hf-xet==1.6.0 ; platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
     # via huggingface-hub
@@ -280,9 +272,7 @@ jsonschema==4.26.0
     #   mcp
 jsonschema-specifications==2025.9.1
     # via jsonschema
-litellm==1.85.7 ; python_full_version < '3.14'
-    # via google-cloud-aiplatform
-litellm==1.96.2 ; python_full_version >= '3.14'
+litellm==1.96.2
     # via google-cloud-aiplatform
 markdown-it-py==4.2.0
     # via rich
@@ -313,34 +303,30 @@ opentelemetry-api==1.42.1
     #   google-cloud-logging
     #   mcp
     #   opentelemetry-exporter-gcp-logging
-    #   opentelemetry-exporter-gcp-trace
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-resourcedetector-gcp
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
 opentelemetry-exporter-gcp-logging==1.15.0a0
     # via google-cloud-aiplatform
-opentelemetry-exporter-gcp-trace==1.15.0
-    # via enterprise-knowledge-base (pyproject.toml)
 opentelemetry-exporter-otlp-proto-common==1.42.1
     # via opentelemetry-exporter-otlp-proto-http
 opentelemetry-exporter-otlp-proto-http==1.42.1
-    # via google-cloud-aiplatform
+    # via
+    #   enterprise-knowledge-base (pyproject.toml)
+    #   google-cloud-aiplatform
 opentelemetry-proto==1.42.1
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-resourcedetector-gcp==1.14.0
-    # via
-    #   opentelemetry-exporter-gcp-logging
-    #   opentelemetry-exporter-gcp-trace
+    # via opentelemetry-exporter-gcp-logging
 opentelemetry-sdk==1.42.1
     # via
     #   enterprise-knowledge-base (pyproject.toml)
     #   google-adk
     #   google-cloud-aiplatform
     #   opentelemetry-exporter-gcp-logging
-    #   opentelemetry-exporter-gcp-trace
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-resourcedetector-gcp
 opentelemetry-semantic-conventions==0.63b1
@@ -371,7 +357,6 @@ proto-plus==1.28.4
     #   google-cloud-dlp
     #   google-cloud-logging
     #   google-cloud-resource-manager
-    #   google-cloud-trace
 protobuf==6.33.6
     # via
     #   a2a-sdk
@@ -384,7 +369,6 @@ protobuf==6.33.6
     #   google-cloud-dlp
     #   google-cloud-logging
     #   google-cloud-resource-manager
-    #   google-cloud-trace
     #   googleapis-common-protos
     #   grpc-google-iam-v1
     #   grpcio-status
@@ -411,7 +395,7 @@ pydantic==2.13.5
     #   pydantic-settings
 pydantic-core==2.46.5
     # via pydantic
-pydantic-settings==2.15.0 ; python_full_version >= '3.14'
+pydantic-settings==2.15.0
     # via litellm
 pygments==2.21.0
     # via rich
@@ -452,6 +436,7 @@ regex==2026.9.10
     # via tiktoken
 requests==2.34.2
     # via
+    #   enterprise-knowledge-base (pyproject.toml)
     #   google-adk
     #   google-api-core
     #   google-auth
@@ -482,7 +467,6 @@ six==1.17.0
     # via python-dateutil
 sniffio==1.3.1
     # via
-    #   aiologic
     #   google-genai
     #   openai
 sqlalchemy==2.0.52
@@ -522,32 +506,24 @@ typer==0.27.2
     # via enterprise-knowledge-base (pyproject.toml)
 typing-extensions==4.16.0
     # via
-    #   aiohttp
-    #   aiologic
-    #   aiosignal
     #   anyio
-    #   culsans
     #   fastapi
     #   google-adk
     #   google-cloud-aiplatform
     #   google-genai
     #   grpcio
-    #   httpx2
     #   huggingface-hub
     #   mcp
     #   mcp-types
     #   openai
     #   opentelemetry-api
     #   opentelemetry-exporter-gcp-logging
-    #   opentelemetry-exporter-gcp-trace
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
     #   pydantic
     #   pydantic-core
-    #   referencing
     #   sqlalchemy
-    #   starlette
     #   typing-inspection
 typing-inspection==0.4.4
     # via
@@ -575,8 +551,6 @@ websockets==15.0.1
     #   google-adk
     #   google-genai
     #   uvicorn
-wrapt==2.4.1 ; python_full_version < '3.13'
-    # via aiologic
 yarl==1.24.5
     # via aiohttp
 zipp==4.1.0

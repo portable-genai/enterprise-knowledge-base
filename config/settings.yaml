@@ -250,8 +250,8 @@ adapters:
     platform: enterprise_kb.adapters.platform.remote_audit:RemoteAuditAdapter
     onprem: enterprise_kb.adapters.onprem.audit:OnPremAuditAdapter
   tracer:
-    gcp: enterprise_kb.adapters.gcp.cloud_trace_tracer:CloudTraceTracerAdapter
-    platform: enterprise_kb.adapters.gcp.cloud_trace_tracer:CloudTraceTracerAdapter
+    gcp: enterprise_kb.adapters.gcp.tracer:CloudTracerAdapter
+    platform: enterprise_kb.adapters.gcp.tracer:CloudTracerAdapter
     local: enterprise_kb.adapters.local.tracer:LocalNoopTracerAdapter
     live: enterprise_kb.adapters.local.tracer:LocalNoopTracerAdapter
     onprem: enterprise_kb.adapters.onprem.tracer:OnPremTracerAdapter

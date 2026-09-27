@@ -78,8 +78,8 @@ SDK-free workaround. See `README.md` for the exact "Run locally" seed and comman
   Standard PayGo is not an admissible Singapore deployment posture.
   Unified SDK `google-genai`. ADK `google-adk==2.7.1`. A2A v1.0 + MCP 2026-07-28.
 - Audit: Cloud Logging WORM bucket, retention 2557 days, locked when the deployment states
-  `worm_locked = true` (no default; production locks it, the reference deployment declines it). Tracing: Cloud Trace via
-  OpenTelemetry, message-content capture OFF. Eval: deterministic portable gate.
+  `worm_locked = true` (no default; production locks it, the reference deployment declines it). Tracing: OpenTelemetry OTLP through
+  the agent-observability collector into Cloud Trace, message-content capture OFF. Eval: deterministic portable gate.
 - `[gcp]` extra holds all `google-cloud-*` / `google-adk` / `google-genai` plus
   `google-cloud-storage`,
   `google-cloud-dlp`, `google-cloud-logging`, `google-cloud-alloydb-connector[pg8000]`,
