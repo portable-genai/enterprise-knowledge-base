@@ -122,7 +122,7 @@ No adapter decides access.
 | Freshness + vectors | AlloyDB for PostgreSQL | `alloydb_ledger` |
 | Reasoning | Gemini `gemini-3.5-flash` (thinking=high) | `gemini_llm` |
 | Guardrail / PII | Model Armor / Sensitive Data Protection (DLP) | `model_armor_guardrail`, `dlp_redaction` |
-| Audit / trace / eval | Cloud Logging WORM / Cloud Trace / deterministic portable gate | `cloud_logging_audit`, `cloud_trace_tracer`, `local.evaluation` |
+| Audit / trace / eval | Cloud Logging WORM / Cloud Trace / deterministic portable gate | `cloud_logging_audit`, `tracer` (OTLP through the collector), `local.evaluation` |
 
 The managed AlloyDB connector enables IAM database authentication. Terraform creates distinct IAM
 database users for the app, pipeline and migration service accounts and outputs their

@@ -18,7 +18,7 @@ dependencies = [
   # Shared commons, pinned by tag; no build-time coupling. Public repo, so CI
   # installs it with zero credentials. hex-service-kit: inbound S2S verification (web), outbound
   # S2S headers, fail-closed net defaults, StrEnum base, to_jsonable, hash-chained WORM audit.
-  "hex-service-kit @ git+https://github.com/portable-genai/hex-service-kit@v0.0.10",
+  "hex-service-kit @ git+https://github.com/portable-genai/hex-service-kit@v0.0.11",
   # Shared jurisdiction PII pack, pinned by tag. One pattern source for the runtime
   # redactor (local regex + the GCP DLP custom info types) and the eval pii_safety
   # metric, so a non-home-jurisdiction fork cannot inherit a falsely green gate (C4/E2).
@@ -44,8 +44,14 @@ gcp = [
   "google-cloud-storage>=2.18",
   "google-cloud-dlp>=3.20",
   "google-cloud-logging>=3.11",
-  "opentelemetry-sdk>=1.27",
-  "opentelemetry-exporter-gcp-trace>=1.7",
+  # The gcp tracer (adapters/gcp/tracer.py) is the kit's build_tracer: OTLP through the
+  # agent-observability collector and nowhere else. Its runtime is declared here rather
+  # than taken as hex-service-kit[otel], whose opentelemetry-sdk>=1.44 floor google-adk
+  # refuses (it caps the SDK at 1.42.1); the kit's tracer runs on either.
+  "opentelemetry-sdk>=1.39",
+  "opentelemetry-exporter-otlp-proto-http>=1.39",
+  "requests>=2.31",
+  "google-auth>=2.30",
   "google-cloud-alloydb-connector[pg8000]>=1.4",
   "sqlalchemy>=2.0",
   "a2a-sdk[http-server]>=1.1",
