@@ -9,7 +9,7 @@
 # --------------------------------------------------------------------------- #
 # Builder : install dependencies into a venv we can copy into a slim runtime.
 # --------------------------------------------------------------------------- #
-FROM python:3.14-slim@sha256:ce40764625a4ff50df3548277632e7f96c4e77fe75fa848aae9885476e7df5a4 AS builder
+FROM python:3.15-slim@sha256:94d3426f1def7db4a106a232ac121bfd975393e5dfd40a619b955fae45fe7913 AS builder
 
 ENV PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -40,7 +40,7 @@ RUN pip install -r requirements-gcp.lock && pip install --no-deps .
 # --------------------------------------------------------------------------- #
 # Runtime : slim, non-root, venv copied from builder.
 # --------------------------------------------------------------------------- #
-FROM python:3.14-slim@sha256:ce40764625a4ff50df3548277632e7f96c4e77fe75fa848aae9885476e7df5a4 AS runtime
+FROM python:3.15-slim@sha256:94d3426f1def7db4a106a232ac121bfd975393e5dfd40a619b955fae45fe7913 AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
